@@ -74,6 +74,18 @@ export const subscribeToReminders = (userId: string, callback: (reminders: Remin
 };
 
 /**
+ * Verifica se um timestamp numérico corresponde ao dia de hoje no fuso local.
+ */
+const isTimestampToday = (timestamp?: number | null): boolean => {
+  if (!timestamp) return false;
+  const compDate = new Date(timestamp);
+  const today = new Date();
+  return compDate.getDate() === today.getDate() &&
+         compDate.getMonth() === today.getMonth() &&
+         compDate.getFullYear() === today.getFullYear();
+};
+
+/**
  * Cria ou atualiza um lembrete no Firestore.
  */
 export const saveReminder = async (
@@ -82,6 +94,10 @@ export const saveReminder = async (
     id?: string;
     createdAt?: number;
     nextTriggerAt?: number;
+    nextDueAt?: number;
+    completedToday?: boolean;
+    lastNotifiedAt?: number | null;
+    notificationStatus?: 'sent' | 'failed' | 'skipped' | null;
   }
 ): Promise<string> => {
   try {
@@ -89,7 +105,7 @@ export const saveReminder = async (
     const remindersCol = getRemindersCollection(userId);
 
     // Se estiver ativado e não possuir um nextTriggerAt calculado, calcula agora
-    let triggerAt = reminderData.nextTriggerAt;
+    let triggerAt = reminderData.nextTriggerAt || reminderData.nextDueAt;
     if (reminderData.active && !triggerAt) {
       triggerAt = calculateNextTrigger(
         reminderData.mode,
@@ -100,6 +116,8 @@ export const saveReminder = async (
       // Se estiver desativado, define nextTriggerAt como 0 ou valor seguro
       triggerAt = 0;
     }
+
+    const completed = isTimestampToday(reminderData.lastCompletedAt);
 
     const payload: Omit<Reminder, 'id'> = {
       babyId: reminderData.babyId,
@@ -114,7 +132,11 @@ export const saveReminder = async (
       createdAt: reminderData.createdAt || now,
       updatedAt: now,
       lastCompletedAt: reminderData.lastCompletedAt || null,
-      nextTriggerAt: triggerAt || 0
+      nextTriggerAt: triggerAt || 0,
+      nextDueAt: triggerAt || 0,
+      completedToday: completed,
+      lastNotifiedAt: reminderData.lastNotifiedAt || null,
+      notificationStatus: reminderData.notificationStatus || null
     };
 
     if (reminderData.id) {
@@ -177,6 +199,8 @@ export const completeReminder = async (userId: string, reminder: Reminder): Prom
       active: nextActive,
       lastCompletedAt: now,
       nextTriggerAt: triggerAt,
+      nextDueAt: triggerAt,
+      completedToday: true,
       updatedAt: now
     }, { merge: true });
   } catch (error) {
@@ -202,6 +226,7 @@ export const toggleReminderActive = async (userId: string, reminder: Reminder): 
     await setDoc(docRef, {
       active: nextActive,
       nextTriggerAt: triggerAt,
+      nextDueAt: triggerAt,
       updatedAt: now
     }, { merge: true });
   } catch (error) {

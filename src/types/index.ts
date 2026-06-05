@@ -72,6 +72,10 @@ export interface Reminder {
   updatedAt: number;
   lastCompletedAt?: number | null; // Timestamp da última conclusão
   nextTriggerAt: number;     // Timestamp do próximo disparo para ordenação e disparo
+  nextDueAt?: number;        // Timestamp do próximo vencimento (alias/sincronizado com nextTriggerAt)
+  completedToday?: boolean;  // Indica se foi concluído no dia de hoje
+  lastNotifiedAt?: number | null; // Timestamp do último push disparado
+  notificationStatus?: 'sent' | 'failed' | 'skipped' | null; // Estado do último disparo de push
 }
 
 export interface UserProfile {

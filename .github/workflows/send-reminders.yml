@@ -1,0 +1,32 @@
+name: Envio Automático de Lembretes
+
+on:
+  schedule:
+    # Executa a cada 15 minutos
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Permite execução manual pela interface do GitHub
+
+jobs:
+  send-reminders:
+    name: Enviar Lembretes Vencidos
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar Código do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm install
+
+      - name: Executar Script de Disparo de Notificações
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: node scripts/sendDueReminders.cjs
