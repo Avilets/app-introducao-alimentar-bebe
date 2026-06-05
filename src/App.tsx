@@ -203,7 +203,7 @@ function App() {
               try {
                 new Notification(reminder.title, {
                   body: reminder.notes || 'Hora de cuidar do bebê!',
-                  icon: '/icon-192.png',
+                  icon: `${import.meta.env.BASE_URL}favicon.svg`,
                   vibrate: [200, 100, 200]
                 } as any);
               } catch (e) {

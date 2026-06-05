@@ -20,8 +20,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || "Rotina Alimentar Bebê";
   const notificationOptions = {
     body: payload.notification?.body || "Lembrete de rotina do bebê!",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "favicon.svg",
+    badge: "favicon.svg",
     data: payload.data
   };
 

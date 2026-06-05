@@ -20,7 +20,7 @@ export const requestFCMToken = async (userId: string): Promise<string> => {
     }
 
     // 3. Registrar o service worker do Firebase Messaging
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const registration = await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}firebase-messaging-sw.js`);
     await navigator.serviceWorker.ready;
     
     // 4. Obter a instância do Firebase Messaging
