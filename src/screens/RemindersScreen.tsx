@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Reminder, ReminderType, ReminderMode } from '../types';
+import { Capacitor } from '@capacitor/core';
+import { checkLocalNotificationPermission, requestLocalNotificationPermission } from '../services/localNotificationService';
 import {
   Bell,
   Plus,
@@ -30,9 +32,7 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
   onCompleteReminder
 }) => {
   // Notification status
-  const [permission, setPermission] = useState<NotificationPermission>(
-    'Notification' in window ? Notification.permission : 'denied'
-  );
+  const [hasPermission, setHasPermission] = useState(false);
 
   // Form states
   const [showForm, setShowForm] = useState(false);
@@ -49,17 +49,28 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
 
   // Update permission state
   useEffect(() => {
-    if ('Notification' in window) {
-      setPermission(Notification.permission);
-    }
+    const checkPerm = async () => {
+      if (Capacitor.isNativePlatform()) {
+        const granted = await checkLocalNotificationPermission();
+        setHasPermission(granted);
+      } else {
+        setHasPermission('Notification' in window ? Notification.permission === 'granted' : false);
+      }
+    };
+    checkPerm();
   }, []);
 
   const requestNotificationPermission = async () => {
-    if ('Notification' in window) {
-      const resp = await Notification.requestPermission();
-      setPermission(resp);
+    if (Capacitor.isNativePlatform()) {
+      const granted = await requestLocalNotificationPermission();
+      setHasPermission(granted);
     } else {
-      alert('Seu navegador ou dispositivo não suporta a API de Notificações.');
+      if ('Notification' in window) {
+        const resp = await Notification.requestPermission();
+        setHasPermission(resp === 'granted');
+      } else {
+        alert('Seu navegador ou dispositivo não suporta a API de Notificações.');
+      }
     }
   };
 
@@ -179,7 +190,7 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
       </div>
 
       {/* Request Notification Permission Button */}
-      {permission !== 'granted' ? (
+      {!hasPermission ? (
         <button
           onClick={requestNotificationPermission}
           className="w-full py-3 px-4 rounded-2xl border border-dashed border-pink-300 bg-pink-50 hover:bg-pink-100 text-pink-700 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
@@ -189,7 +200,7 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
         </button>
       ) : (
         <div className="py-2.5 px-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-center text-[10px] font-bold">
-          ✓ Notificações autorizadas no navegador
+          ✓ Notificações autorizadas no aparelho/navegador
         </div>
       )}
 

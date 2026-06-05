@@ -32,6 +32,12 @@ import {
   toggleReminderActive
 } from './services/reminderService';
 import { requestFCMToken } from './services/notificationService';
+import { Capacitor } from '@capacitor/core';
+import {
+  scheduleReminderNotification,
+  cancelReminderNotification,
+  requestLocalNotificationPermission
+} from './services/localNotificationService';
 
 // Mock DB helpers (for Guest/Demo mode)
 import {
@@ -481,6 +487,12 @@ function App() {
       const updated = reminders.map(r => r.id === id ? { ...r, active: nextActive, nextTriggerAt: triggerAt } : r);
       setReminders(updated);
       saveStoredReminders(updated);
+
+      // Sincroniza notificação local no modo simulado
+      const updatedReminder = updated.find(r => r.id === id);
+      if (updatedReminder) {
+        await scheduleReminderNotification(updatedReminder);
+      }
     } else if (uid) {
       try {
         await toggleReminderActive(uid, reminder);
@@ -513,6 +525,12 @@ function App() {
         } as Reminder : r);
         setReminders(updated);
         saveStoredReminders(updated);
+
+        // Sincroniza notificação local no modo simulado
+        const updatedReminder = updated.find(r => r.id === newRem.id);
+        if (updatedReminder) {
+          await scheduleReminderNotification(updatedReminder);
+        }
       } else {
         // Criar novo lembrete simulado
         const triggerAt = newRem.active 
@@ -537,6 +555,9 @@ function App() {
         const updated = [...reminders, reminder].sort((a, b) => a.nextTriggerAt - b.nextTriggerAt);
         setReminders(updated);
         saveStoredReminders(updated);
+
+        // Sincroniza notificação local no modo simulado
+        await scheduleReminderNotification(reminder);
       }
     } else if (uid) {
       try {
@@ -577,6 +598,12 @@ function App() {
       } : r);
       setReminders(updated);
       saveStoredReminders(updated);
+
+      // Sincroniza notificação local no modo simulado
+      const updatedReminder = updated.find(r => r.id === reminder.id);
+      if (updatedReminder) {
+        await scheduleReminderNotification(updatedReminder);
+      }
     } else if (uid) {
       try {
         await completeReminder(uid, reminder);
@@ -592,6 +619,9 @@ function App() {
       const updated = reminders.filter(r => r.id !== id);
       setReminders(updated);
       saveStoredReminders(updated);
+
+      // Cancela a notificação local correspondente
+      await cancelReminderNotification(id);
     } else if (uid) {
       try {
         await deleteReminder(uid, id);
@@ -603,6 +633,14 @@ function App() {
   };
 
   const handleActivatePushNotifications = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const granted = await requestLocalNotificationPermission();
+      if (!granted) {
+        throw new Error('Permissão de notificação local negada pelo usuário.');
+      }
+      return;
+    }
+
     if (uid === 'demo-uid') {
       // Simulação para o modo demonstração/convidado
       await new Promise((resolve) => setTimeout(resolve, 1500));

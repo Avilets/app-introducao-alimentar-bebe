@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Reminder, ReminderMode } from '../types';
+import { scheduleReminderNotification, cancelReminderNotification } from './localNotificationService';
 
 /**
  * Obtém a referência da subcoleção 'reminders' do usuário.
@@ -148,9 +149,22 @@ export const saveReminder = async (
         updatedAt: now
       }, { merge: true });
       
+      // Agenda/atualiza a notificação local nativa
+      await scheduleReminderNotification({
+        id: reminderData.id,
+        ...payload
+      } as Reminder);
+      
       return reminderData.id;
     } else {
       const docRef = await addDoc(remindersCol, payload);
+      
+      // Agenda a notificação local nativa
+      await scheduleReminderNotification({
+        id: docRef.id,
+        ...payload
+      } as Reminder);
+      
       return docRef.id;
     }
   } catch (error) {
@@ -195,14 +209,22 @@ export const completeReminder = async (userId: string, reminder: Reminder): Prom
     }
 
     const docRef = doc(db, 'users', userId, 'reminders', reminder.id!);
-    await setDoc(docRef, {
+    const updatePayload = {
       active: nextActive,
       lastCompletedAt: now,
       nextTriggerAt: triggerAt,
       nextDueAt: triggerAt,
       completedToday: true,
       updatedAt: now
-    }, { merge: true });
+    };
+    
+    await setDoc(docRef, updatePayload, { merge: true });
+
+    // Sincroniza a notificação local
+    await scheduleReminderNotification({
+      ...reminder,
+      ...updatePayload
+    });
   } catch (error) {
     console.error('Erro ao concluir lembrete:', error);
     throw error;
@@ -223,12 +245,20 @@ export const toggleReminderActive = async (userId: string, reminder: Reminder): 
     }
 
     const docRef = doc(db, 'users', userId, 'reminders', reminder.id!);
-    await setDoc(docRef, {
+    const updatePayload = {
       active: nextActive,
       nextTriggerAt: triggerAt,
       nextDueAt: triggerAt,
       updatedAt: now
-    }, { merge: true });
+    };
+    
+    await setDoc(docRef, updatePayload, { merge: true });
+
+    // Sincroniza a notificação local
+    await scheduleReminderNotification({
+      ...reminder,
+      ...updatePayload
+    });
   } catch (error) {
     console.error('Erro ao alternar status do lembrete:', error);
     throw error;
@@ -242,6 +272,9 @@ export const deleteReminder = async (userId: string, id: string): Promise<void> 
   try {
     const docRef = doc(db, 'users', userId, 'reminders', id);
     await deleteDoc(docRef);
+    
+    // Cancela a notificação local correspondente
+    await cancelReminderNotification(id);
   } catch (error) {
     console.error('Erro ao excluir lembrete:', error);
     throw error;
