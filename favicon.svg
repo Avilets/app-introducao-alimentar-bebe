@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Background circle with soft peach color -->
+  <circle cx="256" cy="256" r="240" fill="#fff5eb" stroke="#ffd8b3" stroke-width="8"/>
+  <!-- Cute Baby Bowl -->
+  <path d="M140 280h232c0 60-48 108-116 108s-116-48-116-108z" fill="#f97316"/>
+  <!-- Bowl Rim -->
+  <rect x="120" y="260" width="272" height="20" rx="10" fill="#ea580c"/>
+  <!-- Cute Spoon -->
+  <path d="M360 140l-80 80c-6 6-6 16 0 22s16 6 22 0l80-80c10-10 10-26 0-36s-26-10-36 0z" fill="#0d9488"/>
+  <!-- Heart icon inside bowl representing baby food made with love -->
+  <path d="M256 300c-3-5-10-5-13 0l-1 2c-3 3-2 8 1 11l13 11 13-11c3-3 4-8 1-11l-1-2z" fill="#ffffff"/>
+  <!-- Happy Face on the bowl (two eyes and a smile) -->
+  <circle cx="210" cy="325" r="6" fill="#ffffff"/>
+  <circle cx="302" cy="325" r="6" fill="#ffffff"/>
+  <path d="M244 345c0 5 5 9 12 9s12-4 12-9" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</svg>
