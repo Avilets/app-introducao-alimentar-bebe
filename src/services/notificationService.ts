@@ -29,8 +29,8 @@ export const requestFCMToken = async (userId: string): Promise<string> => {
       throw new Error('O Firebase Messaging não pôde ser inicializado neste navegador.');
     }
 
-    // 5. Obter a chave VAPID das variáveis de ambiente
-    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+    // 5. Obter a chave VAPID das variáveis de ambiente com fallback público seguro
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || "BDnIVry-Yu7T3Afo7Uj6r-I71U63UNTmd4j4_JCf-6sbqN4sLipWw5cTZj-viEJHh9-ig6SnNNOnH1SMrOlo96E";
     console.log('[FCM Debug] Chave VAPID carregada:', vapidKey);
     console.log('[FCM Debug] Comprimento da chave VAPID:', vapidKey ? vapidKey.length : 0);
     
