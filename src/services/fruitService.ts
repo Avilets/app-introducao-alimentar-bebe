@@ -99,6 +99,7 @@ export const saveFruitLog = async (
     const payload: Omit<FruitLog, 'id'> = {
       babyId: logData.babyId,
       fruitName: logData.fruitName,
+      fruitType: logData.fruitType || '',
       datetime: logData.datetime,
       quantity: logData.quantity,
       reaction: logData.reaction,

@@ -28,6 +28,7 @@ export interface FruitLog {
   id?: string;
   babyId: string;
   fruitName: string;
+  fruitType?: string; // Variedade/tipo da fruta (ex: Laranja Lima, Maçã Gala)
   datetime: string; // Formato YYYY-MM-DDTHH:MM local
   quantity: QuantityScale;
   reaction: ReactionType;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Baby, FeedingLog, FruitLog, MealLog, Reminder } from '../types';
-import { Milk, Apple, Utensils, Droplet, Check, Trash2, Clock } from 'lucide-react';
+import { Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, Power } from 'lucide-react';
 import { getTodaySummary, isToday } from '../services/summaryService';
 
 interface TodayScreenProps {
@@ -13,6 +13,7 @@ interface TodayScreenProps {
   onAddWaterLog: (ml: number) => void;
   onDeleteLog: (id: string) => void;
   onCompleteReminder: (reminder: Reminder) => void;
+  onToggleReminder: (id: string) => void;
 }
 
 export const TodayScreen: React.FC<TodayScreenProps> = ({
@@ -24,7 +25,8 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   onNavigate,
   onAddWaterLog,
   onDeleteLog,
-  onCompleteReminder
+  onCompleteReminder,
+  onToggleReminder
 }) => {
   const [waterAmount, setWaterAmount] = useState(50);
   const [showWaterSuccess, setShowWaterSuccess] = useState(false);
@@ -143,13 +145,22 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                       Atrasado desde: {r.mode === 'fixed' ? r.fixedTime : new Date(r.nextTriggerAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </span>
                   </div>
-                  <button
-                    onClick={() => onCompleteReminder(r)}
-                    className="p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg active:scale-90 transition-transform cursor-pointer flex items-center justify-center shrink-0"
-                    title="Concluir Lembrete"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => onCompleteReminder(r)}
+                      className="p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
+                      title="Concluir Lembrete"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onToggleReminder(r.id!)}
+                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-rose-600 rounded-lg active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
+                      title="Desativar Lembrete (Parar)"
+                    >
+                      <Power className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
               {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 2 && (
@@ -423,7 +434,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                   label = 'Fruta';
                   color = 'bg-pink-100 text-pink-800 border-pink-200';
                   icon = <Apple className="w-3.5 h-3.5" />;
-                  desc = `${frLog.fruitName} (${frLog.quantity})`;
+                  desc = `${frLog.fruitName}${frLog.fruitType ? ` (${frLog.fruitType})` : ''} (${frLog.quantity})`;
                   break;
                 case 'meal':
                   const mLog = log as MealLog;

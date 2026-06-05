@@ -46,8 +46,7 @@ import {
   getStoredLogs,
   saveStoredLogs,
   getStoredReminders,
-  saveStoredReminders,
-  resetStoredData
+  saveStoredReminders
 } from './config/mockData';
 
 type ScreenName = 'login' | 'baby-profile' | 'today' | 'history' | 'reminders' | 'settings' | 'feed-breast' | 'feed-fruit' | 'feed-meal';
@@ -190,6 +189,7 @@ function App() {
     const notifiedIds = new Set<string>();
 
     const checkInterval = setInterval(() => {
+      if (Capacitor.isNativePlatform()) return;
       const now = Date.now();
       
       reminders.forEach((reminder) => {
@@ -660,22 +660,6 @@ function App() {
     }
   };
 
-  const handleResetDemoData = () => {
-    if (uid === 'demo-uid') {
-      resetStoredData();
-      setBaby(getStoredBaby());
-      setReminders(getStoredReminders());
-      // Re-trigger useEffect logs reload
-      setUser(null);
-      setTimeout(() => {
-        handleLoginSuccess('pais.demo@rotinabebe.com.br');
-      }, 100);
-      alert('Dados de simulação redefinidos com sucesso.');
-    } else {
-      alert('A redefinição automática de banco de dados só está disponível no modo Simulação Convidado.');
-    }
-  };
-
   // Render correct sub-screen component
   const renderScreen = () => {
     if (!user) {
@@ -717,6 +701,7 @@ function App() {
               else if (isMeal) handleDeleteLog(id, 'meal');
             }}
             onCompleteReminder={handleCompleteReminder}
+            onToggleReminder={handleToggleReminder}
           />
         );
       case 'history':
@@ -747,7 +732,6 @@ function App() {
               setCurrentScreen('baby-profile');
             }}
             onLogout={handleLogout}
-            onResetData={handleResetDemoData}
             onActivatePush={handleActivatePushNotifications}
           />
         );

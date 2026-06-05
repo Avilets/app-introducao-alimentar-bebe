@@ -219,7 +219,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                       const frLog = log as FruitLog;
                       icon = <Apple className="w-4 h-4" />;
                       colorClass = 'bg-pink-100 text-pink-800 border-pink-200';
-                      title = `Fruta: ${frLog.fruitName}`;
+                      title = `Fruta: ${frLog.fruitName}${frLog.fruitType ? ` (${frLog.fruitType})` : ''}`;
                       detailsText = `Qtd: ${frLog.quantity}`;
                       reactionEmoji = getReactionEmoji(frLog.reaction);
                       break;

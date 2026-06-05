@@ -6,6 +6,7 @@ import type { QuantityScale, ReactionType } from '../types';
 interface FeedFruitScreenProps {
   onSave: (details: {
     fruitName: string;
+    fruitType?: string;
     datetime: string;
     quantity: QuantityScale;
     reaction: ReactionType;
@@ -29,6 +30,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
   };
 
   const [fruitName, setFruitName] = useState<string>('');
+  const [fruitType, setFruitType] = useState<string>('');
   const [datetime, setDatetime] = useState(getCurrentLocalDatetime());
   const [quantity, setQuantity] = useState<QuantityScale>('bem');
   const [reaction, setReaction] = useState<ReactionType>('aceitou');
@@ -52,6 +54,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
     setError('');
     onSave({
       fruitName,
+      fruitType: fruitType.trim() || undefined,
       datetime,
       quantity,
       reaction,
@@ -108,6 +111,20 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
               <option key={f.name} value={f.name}>{f.name}</option>
             ))}
           </select>
+        </div>
+
+        {/* Tipo / Variedade da Fruta (Opcional) */}
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Tipo / Variedade (Opcional)
+          </label>
+          <input
+            type="text"
+            placeholder="Ex: Lima, Nanica, Gala, Manteiga..."
+            value={fruitType}
+            onChange={(e) => setFruitType(e.target.value)}
+            className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-pink-300 text-sm font-semibold text-slate-700"
+          />
         </div>
 
         {/* Informações Educativas da Fruta Selecionada */}
