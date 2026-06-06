@@ -29,15 +29,15 @@ export const getDayDateRange = (date?: Date) => {
   };
 };
 
-const getFeedingsCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'feedings');
+const getFeedingsCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'feedings');
 };
 
 /**
  * Escuta em tempo real todas as mamadas e registros de água do usuário.
  */
-export const subscribeToFeedings = (userId: string, callback: (logs: FeedingLog[]) => void) => {
-  const q = query(getFeedingsCollection(userId), orderBy('datetime', 'desc'));
+export const subscribeToFeedings = (familyId: string, callback: (logs: FeedingLog[]) => void) => {
+  const q = query(getFeedingsCollection(familyId), orderBy('datetime', 'desc'));
   
   return onSnapshot(q, (snapshot) => {
     const list: FeedingLog[] = [];
@@ -56,9 +56,9 @@ export const subscribeToFeedings = (userId: string, callback: (logs: FeedingLog[
 /**
  * Busca de forma assíncrona todas as mamadas e registros de água do usuário.
  */
-export const getFeedings = async (userId: string): Promise<FeedingLog[]> => {
+export const getFeedings = async (familyId: string): Promise<FeedingLog[]> => {
   try {
-    const q = query(getFeedingsCollection(userId), orderBy('datetime', 'desc'));
+    const q = query(getFeedingsCollection(familyId), orderBy('datetime', 'desc'));
     const snapshot = await getDocs(q);
     const list: FeedingLog[] = [];
     snapshot.forEach((docSnap) => {
@@ -77,11 +77,11 @@ export const getFeedings = async (userId: string): Promise<FeedingLog[]> => {
 /**
  * Busca apenas as mamadas e registros de água do dia de hoje.
  */
-export const getTodayFeedings = async (userId: string): Promise<FeedingLog[]> => {
+export const getTodayFeedings = async (familyId: string): Promise<FeedingLog[]> => {
   try {
     const range = getDayDateRange();
     const q = query(
-      getFeedingsCollection(userId),
+      getFeedingsCollection(familyId),
       where('datetime', '>=', range.start),
       where('datetime', '<=', range.end)
     );
@@ -105,12 +105,12 @@ export const getTodayFeedings = async (userId: string): Promise<FeedingLog[]> =>
  * Cria ou atualiza um registro de mamada/água no Firestore.
  */
 export const saveFeedingLog = async (
-  userId: string,
+  familyId: string,
   logData: Omit<FeedingLog, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<string> => {
   try {
     const now = Date.now();
-    const feedingsCol = getFeedingsCollection(userId);
+    const feedingsCol = getFeedingsCollection(familyId);
     
     const payload: any = {
       babyId: logData.babyId,
@@ -127,10 +127,28 @@ export const saveFeedingLog = async (
     if (logData.durationMinutes !== undefined && logData.durationMinutes !== null) {
       payload.durationMinutes = Number(logData.durationMinutes);
     }
+    if (logData.breastSide !== undefined) {
+      payload.breastSide = logData.breastSide;
+    }
+    if (logData.leftBreastDurationSeconds !== undefined && logData.leftBreastDurationSeconds !== null) {
+      payload.leftBreastDurationSeconds = Number(logData.leftBreastDurationSeconds);
+    }
+    if (logData.rightBreastDurationSeconds !== undefined && logData.rightBreastDurationSeconds !== null) {
+      payload.rightBreastDurationSeconds = Number(logData.rightBreastDurationSeconds);
+    }
+    if (logData.totalBreastDurationSeconds !== undefined && logData.totalBreastDurationSeconds !== null) {
+      payload.totalBreastDurationSeconds = Number(logData.totalBreastDurationSeconds);
+    }
+    if (logData.startedAt !== undefined && logData.startedAt !== null) {
+      payload.startedAt = Number(logData.startedAt);
+    }
+    if (logData.endedAt !== undefined && logData.endedAt !== null) {
+      payload.endedAt = Number(logData.endedAt);
+    }
 
     if (logData.id) {
       // Atualizar existente (preservando o createdAt original)
-      const docRef = doc(db, 'users', userId, 'feedings', logData.id);
+      const docRef = doc(db, 'families', familyId, 'feedings', logData.id);
       
       // Remove createdAt para não sobrescrever
       const { createdAt, ...updatePayload } = payload;
@@ -154,9 +172,9 @@ export const saveFeedingLog = async (
 /**
  * Exclui um registro de mamada/água do Firestore.
  */
-export const deleteFeedingLog = async (userId: string, id: string): Promise<void> => {
+export const deleteFeedingLog = async (familyId: string, id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'feedings', id);
+    const docRef = doc(db, 'families', familyId, 'feedings', id);
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Erro ao excluir mamada/água:', error);

@@ -208,45 +208,45 @@ export const calculatePercentile = (
   
   let percentile = 50;
   let percentileText = 'P50';
-  let interpretation = 'Próximo à mediana para a idade e sexo';
+  let interpretation = 'Próximo à mediana';
 
   if (value < limits.p3) {
     // Abaixo do percentil 3
     const ratio = value / limits.p3;
     percentile = Math.max(1, Math.round(3 * ratio));
     percentileText = 'Abaixo de P3';
-    interpretation = 'Abaixo da curva de referência típica';
+    interpretation = 'Abaixo da mediana';
   } else if (value < limits.p15) {
     // Entre P3 e P15
     const ratio = (value - limits.p3) / (limits.p15 - limits.p3);
     percentile = Math.round(3 + 12 * ratio);
     percentileText = `P${percentile}`;
-    interpretation = 'Faixa de alerta inferior (baixo peso/altura)';
+    interpretation = 'Abaixo da mediana';
   } else if (value < limits.p50) {
     // Entre P15 e P50
     const ratio = (value - limits.p15) / (limits.p50 - limits.p15);
     percentile = Math.round(15 + 35 * ratio);
     percentileText = `P${percentile}`;
-    interpretation = 'Dentro do padrão de crescimento saudável';
+    interpretation = 'Próximo à mediana';
   } else if (value < limits.p85) {
     // Entre P50 e P85
     const ratio = (value - limits.p50) / (limits.p85 - limits.p50);
     percentile = Math.round(50 + 35 * ratio);
     percentileText = `P${percentile}`;
-    interpretation = 'Dentro do padrão de crescimento saudável';
+    interpretation = 'Próximo à mediana';
   } else if (value < limits.p97) {
     // Entre P85 e P97
     const ratio = (value - limits.p85) / (limits.p97 - limits.p85);
     percentile = Math.round(85 + 12 * ratio);
     percentileText = `P${percentile}`;
-    interpretation = 'Faixa de alerta superior (alto peso/altura)';
+    interpretation = 'Acima da mediana';
   } else {
     // Acima de P97
     const diff = value - limits.p97;
     const ratio = diff / (limits.p97 - limits.p85);
     percentile = Math.min(99, Math.round(97 + 2 * ratio));
     percentileText = 'Acima de P97';
-    interpretation = 'Acima da curva de referência típica';
+    interpretation = 'Acima da mediana';
   }
 
   return { percentile, percentileText, interpretation };

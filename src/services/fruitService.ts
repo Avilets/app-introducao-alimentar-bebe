@@ -14,15 +14,15 @@ import { db } from './firebase';
 import { getDayDateRange } from './feedingService';
 import type { FruitLog } from '../types';
 
-const getFruitsCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'fruits');
+const getFruitsCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'fruits');
 };
 
 /**
  * Escuta em tempo real todos os registros de frutas do usuário.
  */
-export const subscribeToFruits = (userId: string, callback: (logs: FruitLog[]) => void) => {
-  const q = query(getFruitsCollection(userId), orderBy('datetime', 'desc'));
+export const subscribeToFruits = (familyId: string, callback: (logs: FruitLog[]) => void) => {
+  const q = query(getFruitsCollection(familyId), orderBy('datetime', 'desc'));
   
   return onSnapshot(q, (snapshot) => {
     const list: FruitLog[] = [];
@@ -41,9 +41,9 @@ export const subscribeToFruits = (userId: string, callback: (logs: FruitLog[]) =
 /**
  * Busca de forma assíncrona todas as frutas registradas pelo usuário.
  */
-export const getFruits = async (userId: string): Promise<FruitLog[]> => {
+export const getFruits = async (familyId: string): Promise<FruitLog[]> => {
   try {
-    const q = query(getFruitsCollection(userId), orderBy('datetime', 'desc'));
+    const q = query(getFruitsCollection(familyId), orderBy('datetime', 'desc'));
     const snapshot = await getDocs(q);
     const list: FruitLog[] = [];
     snapshot.forEach((docSnap) => {
@@ -62,11 +62,11 @@ export const getFruits = async (userId: string): Promise<FruitLog[]> => {
 /**
  * Busca apenas as frutas registradas no dia de hoje.
  */
-export const getTodayFruits = async (userId: string): Promise<FruitLog[]> => {
+export const getTodayFruits = async (familyId: string): Promise<FruitLog[]> => {
   try {
     const range = getDayDateRange();
     const q = query(
-      getFruitsCollection(userId),
+      getFruitsCollection(familyId),
       where('datetime', '>=', range.start),
       where('datetime', '<=', range.end)
     );
@@ -89,12 +89,12 @@ export const getTodayFruits = async (userId: string): Promise<FruitLog[]> => {
  * Cria ou atualiza um registro de fruta no Firestore.
  */
 export const saveFruitLog = async (
-  userId: string,
+  familyId: string,
   logData: Omit<FruitLog, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<string> => {
   try {
     const now = Date.now();
-    const fruitsCol = getFruitsCollection(userId);
+    const fruitsCol = getFruitsCollection(familyId);
     
     const payload: Omit<FruitLog, 'id'> = {
       babyId: logData.babyId,
@@ -109,7 +109,7 @@ export const saveFruitLog = async (
     };
 
     if (logData.id) {
-      const docRef = doc(db, 'users', userId, 'fruits', logData.id);
+      const docRef = doc(db, 'families', familyId, 'fruits', logData.id);
       await setDoc(docRef, {
         ...payload,
         updatedAt: now
@@ -128,9 +128,9 @@ export const saveFruitLog = async (
 /**
  * Exclui um registro de fruta do Firestore.
  */
-export const deleteFruitLog = async (userId: string, id: string): Promise<void> => {
+export const deleteFruitLog = async (familyId: string, id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'fruits', id);
+    const docRef = doc(db, 'families', familyId, 'fruits', id);
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Erro ao excluir fruta:', error);

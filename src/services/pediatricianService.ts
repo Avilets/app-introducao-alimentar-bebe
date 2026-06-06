@@ -4,9 +4,9 @@ import { db } from './firebase';
 /**
  * Obtém as observações importantes salvas para o pediatra no Firestore.
  */
-export const getPediatricianNotes = async (userId: string): Promise<string> => {
+export const getPediatricianNotes = async (familyId: string): Promise<string> => {
   try {
-    const docRef = doc(db, 'users', userId, 'pediatrician', 'notes');
+    const docRef = doc(db, 'families', familyId, 'pediatrician', 'notes');
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
@@ -22,9 +22,9 @@ export const getPediatricianNotes = async (userId: string): Promise<string> => {
 /**
  * Salva as observações importantes para o pediatra no Firestore.
  */
-export const savePediatricianNotes = async (userId: string, content: string): Promise<void> => {
+export const savePediatricianNotes = async (familyId: string, content: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'pediatrician', 'notes');
+    const docRef = doc(db, 'families', familyId, 'pediatrician', 'notes');
     await setDoc(docRef, {
       content,
       updatedAt: Date.now()

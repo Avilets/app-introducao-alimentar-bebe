@@ -6,7 +6,7 @@ import { db, getMessagingInstance } from './firebase';
  * Solicita permissões de notificação, registra o Service Worker específico do FCM,
  * obtém o token do dispositivo e o salva no Firestore do usuário.
  */
-export const requestFCMToken = async (userId: string): Promise<string> => {
+export const requestFCMToken = async (userId: string, familyId: string): Promise<string> => {
   try {
     // 1. Verificar suporte a notificações e service workers no navegador
     if (!('serviceWorker' in navigator) || !('Notification' in window)) {
@@ -48,13 +48,14 @@ export const requestFCMToken = async (userId: string): Promise<string> => {
       throw new Error('Não foi possível obter o token de notificação do Firebase.');
     }
 
-    // 7. Salvar o token no Firestore em: users/{userId}/notificationTokens/{tokenId}
+    // 7. Salvar o token no Firestore em: families/{familyId}/notificationTokens/{tokenId}
     // Usamos um ID determinístico baseado no token para evitar registros duplicados do mesmo aparelho
     const tokenId = btoa(token.slice(0, 30)).replace(/[^a-zA-Z0-9]/g, '_');
     
-    const tokenDocRef = doc(db, 'users', userId, 'notificationTokens', tokenId);
+    const tokenDocRef = doc(db, 'families', familyId, 'notificationTokens', tokenId);
     
     await setDoc(tokenDocRef, {
+      userId,
       token,
       platform: 'web-pwa',
       userAgent: navigator.userAgent,

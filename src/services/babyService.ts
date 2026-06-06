@@ -14,17 +14,17 @@ import type { Baby } from '../types';
 /**
  * Obtém a referência da subcoleção 'babies' do usuário.
  */
-const getBabiesCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'babies');
+const getBabiesCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'babies');
 };
 
 /**
  * Busca o primeiro bebê cadastrado para o usuário.
  * Retorna null se nenhum bebê for encontrado.
  */
-export const getBaby = async (userId: string): Promise<Baby | null> => {
+export const getBaby = async (familyId: string): Promise<Baby | null> => {
   try {
-    const q = query(getBabiesCollection(userId), limit(1));
+    const q = query(getBabiesCollection(familyId), limit(1));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
@@ -45,8 +45,8 @@ export const getBaby = async (userId: string): Promise<Baby | null> => {
 /**
  * Escuta em tempo real o perfil do bebê do usuário.
  */
-export const subscribeToBaby = (userId: string, callback: (baby: Baby | null) => void) => {
-  const q = query(getBabiesCollection(userId), limit(1));
+export const subscribeToBaby = (familyId: string, callback: (baby: Baby | null) => void) => {
+  const q = query(getBabiesCollection(familyId), limit(1));
   
   return onSnapshot(q, (snapshot) => {
     if (snapshot.empty) {
@@ -66,18 +66,19 @@ export const subscribeToBaby = (userId: string, callback: (baby: Baby | null) =>
 /**
  * Salva ou edita os dados do bebê no Firestore.
  */
-export const saveBaby = async (userId: string, babyData: Baby): Promise<string> => {
+export const saveBaby = async (familyId: string, babyData: Baby): Promise<string> => {
   try {
-    const babiesCol = getBabiesCollection(userId);
+    const babiesCol = getBabiesCollection(familyId);
     
     if (babyData.id) {
       // Editar bebê existente
-      const docRef = doc(db, 'users', userId, 'babies', babyData.id);
+      const docRef = doc(db, 'families', familyId, 'babies', babyData.id);
       await setDoc(docRef, {
         name: babyData.name,
         birthDate: babyData.birthDate,
         gender: babyData.gender,
-        targetWeight: babyData.targetWeight || null
+        targetWeight: babyData.targetWeight || null,
+        photoBase64: babyData.photoBase64 || null
       }, { merge: true });
       return babyData.id;
     } else {
@@ -86,7 +87,8 @@ export const saveBaby = async (userId: string, babyData: Baby): Promise<string> 
         name: babyData.name,
         birthDate: babyData.birthDate,
         gender: babyData.gender,
-        targetWeight: babyData.targetWeight || null
+        targetWeight: babyData.targetWeight || null,
+        photoBase64: babyData.photoBase64 || null
       });
       return docRef.id;
     }

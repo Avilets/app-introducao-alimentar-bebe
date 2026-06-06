@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { TrendingUp, Plus, Edit2, Trash2, Calendar, AlertTriangle, X } from 'lucide-react';
+import { TrendingUp, Plus, Edit2, Trash2, Calendar, X } from 'lucide-react';
 import type { Baby, GrowthRecord } from '../types';
 import { calculatePercentile, getReferenceData } from '../data/growthPercentiles';
 import { calculateGrowthVariation } from '../services/growthService';
+import MedicalDisclaimer from '../components/MedicalDisclaimer';
 
 interface GrowthScreenProps {
   baby: Baby;
   growthRecords: GrowthRecord[];
+  userRole?: 'admin' | 'cuidador' | 'leitura';
   onSaveRecord: (record: Omit<GrowthRecord, 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<void>;
   onDeleteRecord: (id: string) => Promise<void>;
 }
@@ -282,6 +284,7 @@ const GrowthSVGChart: React.FC<{
 export const GrowthScreen: React.FC<GrowthScreenProps> = ({
   baby,
   growthRecords,
+  userRole = 'admin',
   onSaveRecord,
   onDeleteRecord
 }) => {
@@ -445,12 +448,14 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
               <div className="bg-white rounded-3xl p-8 border border-dashed border-slate-200 text-center space-y-3">
                 <p className="text-xs text-slate-400 font-bold">Sem dados suficientes para exibir gráficos.</p>
                 <p className="text-[10px] text-slate-400">Adicione a primeira medição do bebê no Histórico.</p>
-                <button
-                  onClick={handleOpenAddModal}
-                  className="py-2 px-3 bg-orange-500 text-white rounded-xl text-[10px] font-bold"
-                >
-                  Registrar Primeira Medida
-                </button>
+                {userRole !== 'leitura' && (
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="py-2 px-3 bg-orange-500 text-white rounded-xl text-[10px] font-bold"
+                  >
+                    Registrar Primeira Medida
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -489,13 +494,15 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
               <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
                 Medições ({sortedRecords.length})
               </span>
-              <button
-                onClick={handleOpenAddModal}
-                className="py-2 px-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 active:scale-95 transition-all shadow-sm shadow-orange-100 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Registrar Medidas
-              </button>
+              {userRole !== 'leitura' && (
+                <button
+                  onClick={handleOpenAddModal}
+                  className="py-2 px-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 active:scale-95 transition-all shadow-sm shadow-orange-100 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Registrar Medidas
+                </button>
+              )}
             </div>
 
             {sortedRecords.length === 0 ? (
@@ -531,20 +538,22 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
                           <span>{record.date.split('-').reverse().join('/')}</span>
                           <span className="text-[10px] text-slate-400 font-normal">({ageInfo.text})</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleOpenEditModal(record)}
-                            className="p-1 text-slate-400 hover:text-orange-500 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(record.id || '')}
-                            className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {userRole !== 'leitura' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleOpenEditModal(record)}
+                              className="p-1 text-slate-400 hover:text-orange-500 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(record.id || '')}
+                              className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Weight, Length and Head Measurements Grid */}
@@ -629,13 +638,7 @@ export const GrowthScreen: React.FC<GrowthScreenProps> = ({
           </div>
         )}
 
-        {/* Medical disclaimer */}
-        <div className="bg-amber-50/50 border border-amber-100/50 rounded-3xl p-4 flex gap-3 items-start">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-amber-900 leading-relaxed font-semibold">
-            Os percentis são estimativas educativas baseadas em curvas de referência e não substituem a avaliação do pediatra. Sempre converse com o pediatra sobre crescimento, ganho de peso ou qualquer preocupação.
-          </p>
-        </div>
+        <MedicalDisclaimer type="crescimento" className="mt-4 shrink-0" />
       </div>
 
       {/* Add/Edit Modal */}

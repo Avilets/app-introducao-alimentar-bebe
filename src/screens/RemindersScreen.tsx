@@ -18,6 +18,7 @@ import {
 
 interface RemindersScreenProps {
   reminders: Reminder[];
+  userRole?: 'admin' | 'cuidador' | 'leitura';
   onToggleReminder: (id: string) => void;
   onAddReminder: (reminder: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt' | 'nextTriggerAt'> & { id?: string }) => void;
   onDeleteReminder: (id: string) => void;
@@ -26,6 +27,7 @@ interface RemindersScreenProps {
 
 export const RemindersScreen: React.FC<RemindersScreenProps> = ({
   reminders,
+  userRole = 'admin',
   onToggleReminder,
   onAddReminder,
   onDeleteReminder,
@@ -207,7 +209,7 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
       {/* Header and Add Button */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Configurar Lembretes</span>
-        {!showForm && (
+        {!showForm && userRole !== 'leitura' && (
           <button
             onClick={() => {
               resetForm();
@@ -464,21 +466,23 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
                       </div>
 
                       {/* Action trigger: COMPLETE or edit/delete */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => onCompleteReminder(reminder)}
-                          className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-md shadow-rose-200 active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
-                          title="Marcar como Concluído"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(reminder)}
-                          className="p-2 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {userRole !== 'leitura' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onCompleteReminder(reminder)}
+                            className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-md shadow-rose-200 active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
+                            title="Marcar como Concluído"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditClick(reminder)}
+                            className="p-2 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -528,31 +532,33 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
                       </div>
 
                       {/* Switch and Edit/Delete */}
-                      <div className="flex items-center gap-2">
-                        {/* Mark completed manually before expiration */}
-                        <button
-                          onClick={() => onCompleteReminder(reminder)}
-                          className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg border border-slate-100 cursor-pointer"
-                          title="Marcar como Concluído"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleEditClick(reminder)}
-                          className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg border border-slate-100 cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
+                      {userRole !== 'leitura' && (
+                        <div className="flex items-center gap-2">
+                          {/* Mark completed manually before expiration */}
+                          <button
+                            onClick={() => onCompleteReminder(reminder)}
+                            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg border border-slate-100 cursor-pointer"
+                            title="Marcar como Concluído"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          
+                          <button
+                            onClick={() => handleEditClick(reminder)}
+                            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg border border-slate-100 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
 
-                        <button
-                          onClick={() => onToggleReminder(reminder.id!)}
-                          className="p-1.5 bg-slate-50 text-emerald-500 hover:bg-slate-100 border border-slate-100 rounded-lg cursor-pointer"
-                          title="Desativar Lembrete"
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          <button
+                            onClick={() => onToggleReminder(reminder.id!)}
+                            className="p-1.5 bg-slate-50 text-emerald-500 hover:bg-slate-100 border border-slate-100 rounded-lg cursor-pointer"
+                            title="Desativar Lembrete"
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -594,30 +600,32 @@ export const RemindersScreen: React.FC<RemindersScreenProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => onToggleReminder(reminder.id!)}
-                          className="p-1.5 bg-white text-slate-400 hover:text-emerald-500 border border-slate-100 rounded-lg cursor-pointer"
-                          title="Ativar Lembrete"
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleEditClick(reminder)}
-                          className="p-1.5 bg-white text-slate-400 hover:text-slate-600 border border-slate-100 rounded-lg cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
+                      {userRole !== 'leitura' && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onToggleReminder(reminder.id!)}
+                            className="p-1.5 bg-white text-slate-400 hover:text-emerald-500 border border-slate-100 rounded-lg cursor-pointer"
+                            title="Ativar Lembrete"
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </button>
+                          
+                          <button
+                            onClick={() => handleEditClick(reminder)}
+                            className="p-1.5 bg-white text-slate-400 hover:text-slate-600 border border-slate-100 rounded-lg cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
 
-                        <button
-                          onClick={() => onDeleteReminder(reminder.id!)}
-                          className="p-1.5 bg-white text-slate-300 hover:text-rose-500 border border-slate-100 rounded-lg cursor-pointer"
-                          title="Excluir Lembrete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          <button
+                            onClick={() => onDeleteReminder(reminder.id!)}
+                            className="p-1.5 bg-white text-slate-300 hover:text-rose-500 border border-slate-100 rounded-lg cursor-pointer"
+                            title="Excluir Lembrete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

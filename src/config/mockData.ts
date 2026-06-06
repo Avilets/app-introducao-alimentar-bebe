@@ -1,4 +1,4 @@
-import type { Reminder, Baby, GrowthRecord } from '../types';
+import type { Reminder, Baby, GrowthRecord, VaccineRecord, CustomVaccine, SleepRecord, DiaperRecord, Medication, MedicationLog } from '../types';
 
 export interface FeedLog {
   id: string;
@@ -252,10 +252,208 @@ export const saveStoredGrowthRecords = (records: GrowthRecord[]) => {
   localStorage.setItem('rt_growth_records', JSON.stringify(records));
 };
 
+export const MOCK_VACCINE_RECORDS: VaccineRecord[] = [
+  {
+    id: 'vac-rec-1',
+    babyId: 'baby-1',
+    vaccineId: 'bcg_0m',
+    vaccineName: 'BCG',
+    dose: 'Dose Única',
+    recommendedAgeMonths: 0,
+    recommendedDate: '2025-11-12',
+    applied: true,
+    appliedDate: '2025-11-12',
+    location: 'Unidade Básica de Saúde',
+    batchNumber: 'BCG2025A',
+    clinic: 'Posto de Saúde',
+    reaction: 'Nenhuma',
+    notes: 'Cicatriz vacinal normal.',
+    source: 'SUS',
+    createdAt: Date.now() - 3600000 * 24 * 180,
+    updatedAt: Date.now() - 3600000 * 24 * 180
+  },
+  {
+    id: 'vac-rec-2',
+    babyId: 'baby-1',
+    vaccineId: 'hepb_0m',
+    vaccineName: 'Hepatite B',
+    dose: 'Dose de Nascimento',
+    recommendedAgeMonths: 0,
+    recommendedDate: '2025-11-12',
+    applied: true,
+    appliedDate: '2025-11-12',
+    location: 'Maternidade',
+    batchNumber: 'HEP2025X',
+    clinic: 'Maternidade',
+    reaction: 'Nenhuma',
+    notes: 'Aplicada nas primeiras horas.',
+    source: 'SUS',
+    createdAt: Date.now() - 3600000 * 24 * 180,
+    updatedAt: Date.now() - 3600000 * 24 * 180
+  }
+];
+
+export const getStoredVaccineRecords = (): VaccineRecord[] => {
+  const data = localStorage.getItem('rt_vaccine_records');
+  return data ? JSON.parse(data) : MOCK_VACCINE_RECORDS;
+};
+
+export const saveStoredVaccineRecords = (records: VaccineRecord[]) => {
+  localStorage.setItem('rt_vaccine_records', JSON.stringify(records));
+};
+
+export const getStoredCustomVaccines = (): CustomVaccine[] => {
+  const data = localStorage.getItem('rt_custom_vaccines');
+  return data ? JSON.parse(data) : [];
+};
+
+export const saveStoredCustomVaccines = (customVaccines: CustomVaccine[]) => {
+  localStorage.setItem('rt_custom_vaccines', JSON.stringify(customVaccines));
+};
+
+export const getStoredSleepRecords = (): SleepRecord[] => {
+  const data = localStorage.getItem('rt_sleep_records');
+  return data ? JSON.parse(data) : MOCK_SLEEP_RECORDS;
+};
+
+export const saveStoredSleepRecords = (records: SleepRecord[]) => {
+  localStorage.setItem('rt_sleep_records', JSON.stringify(records));
+};
+
+export const getStoredDiaperRecords = (): DiaperRecord[] => {
+  const data = localStorage.getItem('rt_diaper_records');
+  return data ? JSON.parse(data) : MOCK_DIAPER_RECORDS;
+};
+
+export const saveStoredDiaperRecords = (records: DiaperRecord[]) => {
+  localStorage.setItem('rt_diaper_records', JSON.stringify(records));
+};
+
+export const getStoredMedications = (): Medication[] => {
+  const data = localStorage.getItem('rt_medications');
+  return data ? JSON.parse(data) : MOCK_MEDICATIONS;
+};
+
+export const saveStoredMedications = (medications: Medication[]) => {
+  localStorage.setItem('rt_medications', JSON.stringify(medications));
+};
+
+export const getStoredMedicationLogs = (): MedicationLog[] => {
+  const data = localStorage.getItem('rt_medication_logs');
+  return data ? JSON.parse(data) : MOCK_MEDICATION_LOGS;
+};
+
+export const saveStoredMedicationLogs = (logs: MedicationLog[]) => {
+  localStorage.setItem('rt_medication_logs', JSON.stringify(logs));
+};
+
+export const MOCK_SLEEP_RECORDS: SleepRecord[] = [
+  {
+    id: 'slp-1',
+    babyId: 'baby-1',
+    sleepType: 'soneca',
+    startDateTime: `${new Date().toISOString().split('T')[0]}T10:00`,
+    endDateTime: `${new Date().toISOString().split('T')[0]}T11:15`,
+    durationMinutes: 75,
+    location: 'berço',
+    notes: 'Dormiu tranquilo com ruído branco.',
+    createdAt: Date.now() - 3600000 * 5,
+    updatedAt: Date.now() - 3600000 * 5
+  },
+  {
+    id: 'slp-2',
+    babyId: 'baby-1',
+    sleepType: 'sono noturno',
+    startDateTime: `${new Date(Date.now() - 24 * 3600 * 1000).toISOString().split('T')[0]}T20:30`,
+    endDateTime: `${new Date().toISOString().split('T')[0]}T06:45`,
+    durationMinutes: 615,
+    location: 'berço',
+    notes: 'Acordou uma vez para mamar.',
+    createdAt: Date.now() - 24 * 3600 * 1000,
+    updatedAt: Date.now() - 24 * 3600 * 1000
+  }
+];
+
+export const MOCK_DIAPER_RECORDS: DiaperRecord[] = [
+  {
+    id: 'dia-1',
+    babyId: 'baby-1',
+    diaperType: 'xixi',
+    datetime: `${new Date().toISOString().split('T')[0]}T08:30`,
+    notes: 'Fralda bem cheia.',
+    createdAt: Date.now() - 3600000 * 6,
+    updatedAt: Date.now() - 3600000 * 6
+  },
+  {
+    id: 'dia-2',
+    babyId: 'baby-1',
+    diaperType: 'xixi e cocô',
+    datetime: `${new Date().toISOString().split('T')[0]}T12:00`,
+    stoolColor: 'Amarelo ouro',
+    stoolConsistency: 'pastosa',
+    notes: 'Sem assaduras.',
+    createdAt: Date.now() - 3600000 * 3,
+    updatedAt: Date.now() - 3600000 * 3
+  }
+];
+
+export const MOCK_MEDICATIONS: Medication[] = [
+  {
+    id: 'med-1',
+    babyId: 'baby-1',
+    name: 'Vitamina D (Ad-til)',
+    dose: '2',
+    unit: 'gotas',
+    frequencyType: 'dose única',
+    startDate: `${new Date().toISOString().split('T')[0]}`,
+    prescribedBy: 'Dra. Ana (Pediatra)',
+    notes: 'Dar pela manhã.',
+    active: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  },
+  {
+    id: 'med-2',
+    babyId: 'baby-1',
+    name: 'Paracetamol Bebê',
+    dose: '5',
+    unit: 'gotas',
+    frequencyType: 'a cada X horas',
+    intervalHours: 6,
+    startDate: `${new Date().toISOString().split('T')[0]}`,
+    prescribedBy: 'Pediatra de plantão',
+    notes: 'Apenas em caso de febre acima de 37.8ºC.',
+    active: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  }
+];
+
+export const MOCK_MEDICATION_LOGS: MedicationLog[] = [
+  {
+    id: 'med-log-1',
+    babyId: 'baby-1',
+    medicationId: 'med-1',
+    medicationName: 'Vitamina D (Ad-til)',
+    datetime: `${new Date().toISOString().split('T')[0]}T09:00`,
+    doseGiven: '2 gotas',
+    status: 'administrado',
+    notes: 'Tomou direto na colherinha.',
+    createdAt: Date.now() - 3600000 * 5,
+    updatedAt: Date.now() - 3600000 * 5
+  }
+];
+
 export const resetStoredData = () => {
   localStorage.setItem('rt_baby', JSON.stringify(MOCK_BABY));
   localStorage.setItem('rt_logs', JSON.stringify(MOCK_LOGS));
   localStorage.setItem('rt_reminders', JSON.stringify(MOCK_REMINDERS));
   localStorage.setItem('rt_growth_records', JSON.stringify(MOCK_GROWTH_RECORDS));
+  localStorage.setItem('rt_vaccine_records', JSON.stringify(MOCK_VACCINE_RECORDS));
+  localStorage.setItem('rt_custom_vaccines', JSON.stringify([]));
+  localStorage.setItem('rt_sleep_records', JSON.stringify(MOCK_SLEEP_RECORDS));
+  localStorage.setItem('rt_diaper_records', JSON.stringify(MOCK_DIAPER_RECORDS));
+  localStorage.setItem('rt_medications', JSON.stringify(MOCK_MEDICATIONS));
+  localStorage.setItem('rt_medication_logs', JSON.stringify(MOCK_MEDICATION_LOGS));
   localStorage.setItem('rt_ped_notes', 'O bebê tem aceitado bem as frutinhas pela manhã. Demonstrar atenção especial com reações a frutas cítricas.');
 };

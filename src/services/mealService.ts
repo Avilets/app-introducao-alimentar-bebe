@@ -14,15 +14,15 @@ import { db } from './firebase';
 import { getDayDateRange } from './feedingService';
 import type { MealLog } from '../types';
 
-const getMealsCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'meals');
+const getMealsCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'meals');
 };
 
 /**
  * Escuta em tempo real todas as refeições do usuário.
  */
-export const subscribeToMeals = (userId: string, callback: (logs: MealLog[]) => void) => {
-  const q = query(getMealsCollection(userId), orderBy('datetime', 'desc'));
+export const subscribeToMeals = (familyId: string, callback: (logs: MealLog[]) => void) => {
+  const q = query(getMealsCollection(familyId), orderBy('datetime', 'desc'));
   
   return onSnapshot(q, (snapshot) => {
     const list: MealLog[] = [];
@@ -41,9 +41,9 @@ export const subscribeToMeals = (userId: string, callback: (logs: MealLog[]) => 
 /**
  * Busca de forma assíncrona todas as refeições registradas pelo usuário.
  */
-export const getMeals = async (userId: string): Promise<MealLog[]> => {
+export const getMeals = async (familyId: string): Promise<MealLog[]> => {
   try {
-    const q = query(getMealsCollection(userId), orderBy('datetime', 'desc'));
+    const q = query(getMealsCollection(familyId), orderBy('datetime', 'desc'));
     const snapshot = await getDocs(q);
     const list: MealLog[] = [];
     snapshot.forEach((docSnap) => {
@@ -62,11 +62,11 @@ export const getMeals = async (userId: string): Promise<MealLog[]> => {
 /**
  * Busca apenas as refeições registradas no dia de hoje.
  */
-export const getTodayMeals = async (userId: string): Promise<MealLog[]> => {
+export const getTodayMeals = async (familyId: string): Promise<MealLog[]> => {
   try {
     const range = getDayDateRange();
     const q = query(
-      getMealsCollection(userId),
+      getMealsCollection(familyId),
       where('datetime', '>=', range.start),
       where('datetime', '<=', range.end)
     );
@@ -89,12 +89,12 @@ export const getTodayMeals = async (userId: string): Promise<MealLog[]> => {
  * Cria ou atualiza um registro de refeição no Firestore.
  */
 export const saveMealLog = async (
-  userId: string,
+  familyId: string,
   logData: Omit<MealLog, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<string> => {
   try {
     const now = Date.now();
-    const mealsCol = getMealsCollection(userId);
+    const mealsCol = getMealsCollection(familyId);
     
     const payload: Omit<MealLog, 'id'> = {
       babyId: logData.babyId,
@@ -110,7 +110,7 @@ export const saveMealLog = async (
     };
 
     if (logData.id) {
-      const docRef = doc(db, 'users', userId, 'meals', logData.id);
+      const docRef = doc(db, 'families', familyId, 'meals', logData.id);
       await setDoc(docRef, {
         ...payload,
         updatedAt: now
@@ -129,9 +129,9 @@ export const saveMealLog = async (
 /**
  * Exclui um registro de refeição do Firestore.
  */
-export const deleteMealLog = async (userId: string, id: string): Promise<void> => {
+export const deleteMealLog = async (familyId: string, id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'meals', id);
+    const docRef = doc(db, 'families', familyId, 'meals', id);
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Erro ao excluir refeição:', error);

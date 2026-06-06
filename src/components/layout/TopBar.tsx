@@ -4,6 +4,7 @@ import { ArrowLeft, User, Baby as BabyIcon } from 'lucide-react';
 interface TopBarProps {
   title: string;
   babyName?: string;
+  babyPhoto?: string;
   onBack?: () => void;
   onProfileClick?: () => void;
 }
@@ -11,6 +12,7 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   title,
   babyName,
+  babyPhoto,
   onBack,
   onProfileClick
 }) => {
@@ -26,8 +28,12 @@ export const TopBar: React.FC<TopBarProps> = ({
             <ArrowLeft className="w-5 h-5" />
           </button>
         ) : (
-          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-            <BabyIcon className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 overflow-hidden">
+            {babyPhoto ? (
+              <img src={babyPhoto} alt="Bebê" className="w-full h-full object-cover" />
+            ) : (
+              <BabyIcon className="w-4 h-4" />
+            )}
           </div>
         )}
         
@@ -44,10 +50,14 @@ export const TopBar: React.FC<TopBarProps> = ({
       {onProfileClick && (
         <button
           onClick={onProfileClick}
-          className="w-9 h-9 rounded-full bg-amber-100 border-2 border-amber-200 flex items-center justify-center text-amber-700 hover:bg-amber-200 active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 hover:bg-amber-200 active:scale-95 transition-transform overflow-hidden shadow-sm"
           aria-label="Perfil do Bebê"
         >
-          <User className="w-4 h-4" />
+          {babyPhoto ? (
+            <img src={babyPhoto} alt="Bebê" className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
         </button>
       )}
     </header>

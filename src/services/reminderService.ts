@@ -15,8 +15,8 @@ import { scheduleReminderNotification, cancelReminderNotification } from './loca
 /**
  * Obtém a referência da subcoleção 'reminders' do usuário.
  */
-const getRemindersCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'reminders');
+const getRemindersCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'reminders');
 };
 
 /**
@@ -141,7 +141,7 @@ export const saveReminder = async (
     };
 
     if (reminderData.id) {
-      const docRef = doc(db, 'users', userId, 'reminders', reminderData.id);
+      const docRef = doc(db, 'families', userId, 'reminders', reminderData.id);
       
       const { createdAt, ...updatePayload } = payload;
       await setDoc(docRef, {
@@ -208,7 +208,7 @@ export const completeReminder = async (userId: string, reminder: Reminder): Prom
       }
     }
 
-    const docRef = doc(db, 'users', userId, 'reminders', reminder.id!);
+    const docRef = doc(db, 'families', userId, 'reminders', reminder.id!);
     const updatePayload = {
       active: nextActive,
       lastCompletedAt: now,
@@ -244,7 +244,7 @@ export const toggleReminderActive = async (userId: string, reminder: Reminder): 
       triggerAt = calculateNextTrigger(reminder.mode, reminder.fixedTime, reminder.intervalMinutes);
     }
 
-    const docRef = doc(db, 'users', userId, 'reminders', reminder.id!);
+    const docRef = doc(db, 'families', userId, 'reminders', reminder.id!);
     const updatePayload = {
       active: nextActive,
       nextTriggerAt: triggerAt,
@@ -270,7 +270,7 @@ export const toggleReminderActive = async (userId: string, reminder: Reminder): 
  */
 export const deleteReminder = async (userId: string, id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'reminders', id);
+    const docRef = doc(db, 'families', userId, 'reminders', id);
     await deleteDoc(docRef);
     
     // Cancela a notificação local correspondente

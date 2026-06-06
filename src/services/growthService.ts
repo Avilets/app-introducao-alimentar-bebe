@@ -12,18 +12,18 @@ import {
 import { db } from './firebase';
 import type { GrowthRecord } from '../types';
 
-const getGrowthCollection = (userId: string) => {
-  return collection(db, 'users', userId, 'growthRecords');
+const getGrowthCollection = (familyId: string) => {
+  return collection(db, 'families', familyId, 'growthRecords');
 };
 
 /**
  * Escuta em tempo real os registros de crescimento do usuário.
  */
 export const subscribeToGrowthRecords = (
-  userId: string,
+  familyId: string,
   callback: (records: GrowthRecord[]) => void
 ) => {
-  const q = query(getGrowthCollection(userId), orderBy('date', 'desc'));
+  const q = query(getGrowthCollection(familyId), orderBy('date', 'desc'));
   
   return onSnapshot(q, (snapshot) => {
     const list: GrowthRecord[] = [];
@@ -42,9 +42,9 @@ export const subscribeToGrowthRecords = (
 /**
  * Busca de forma assíncrona todos os registros de crescimento do usuário.
  */
-export const getGrowthRecords = async (userId: string): Promise<GrowthRecord[]> => {
+export const getGrowthRecords = async (familyId: string): Promise<GrowthRecord[]> => {
   try {
-    const q = query(getGrowthCollection(userId), orderBy('date', 'desc'));
+    const q = query(getGrowthCollection(familyId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
     const list: GrowthRecord[] = [];
     snapshot.forEach((docSnap) => {
@@ -64,12 +64,12 @@ export const getGrowthRecords = async (userId: string): Promise<GrowthRecord[]> 
  * Cria ou atualiza um registro de crescimento no Firestore.
  */
 export const saveGrowthRecord = async (
-  userId: string,
+  familyId: string,
   recordData: Omit<GrowthRecord, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
 ): Promise<string> => {
   try {
     const now = Date.now();
-    const growthCol = getGrowthCollection(userId);
+    const growthCol = getGrowthCollection(familyId);
     
     // Preparar campos para gravação (tratando perimetro opcional)
     const payload: any = {
@@ -88,7 +88,7 @@ export const saveGrowthRecord = async (
     }
 
     if (recordData.id) {
-      const docRef = doc(db, 'users', userId, 'growthRecords', recordData.id);
+      const docRef = doc(db, 'families', familyId, 'growthRecords', recordData.id);
       await setDoc(docRef, {
         ...payload,
         updatedAt: now
@@ -107,9 +107,9 @@ export const saveGrowthRecord = async (
 /**
  * Exclui um registro de crescimento do Firestore.
  */
-export const deleteGrowthRecord = async (userId: string, id: string): Promise<void> => {
+export const deleteGrowthRecord = async (familyId: string, id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'users', userId, 'growthRecords', id);
+    const docRef = doc(db, 'families', familyId, 'growthRecords', id);
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Erro ao excluir registro de crescimento:', error);

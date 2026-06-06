@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Utensils, Save, X, Calendar } from 'lucide-react';
 import type { MealCategory, MealTexture, QuantityScale, ReactionType } from '../types';
+import MedicalDisclaimer from '../components/MedicalDisclaimer';
 
 interface FeedMealScreenProps {
   onSave: (details: {
@@ -269,9 +270,12 @@ export const FeedMealScreen: React.FC<FeedMealScreenProps> = ({
             Salvar
           </button>
         </div>
+
+        <MedicalDisclaimer type="alimentacao" className="mt-4" />
       </form>
     </div>
   );
 };
 
 export default FeedMealScreen;
+

@@ -89,6 +89,12 @@ const getNotificationTitle = (reminder: Reminder): string => {
       return `🍎 Hora da Frutinha: ${reminder.title}`;
     case 'meal':
       return `🍛 Hora da Refeição: ${reminder.title}`;
+    case 'vacina':
+      return `💉 Vacina: ${reminder.title}`;
+    case 'sono':
+      return `😴 Sono: ${reminder.title}`;
+    case 'medicamento':
+      return `💊 Medicamento: ${reminder.title}`;
     default:
       return `⏰ Lembrete: ${reminder.title}`;
   }

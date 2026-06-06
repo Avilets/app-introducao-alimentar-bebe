@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { LogIn, UserPlus, Sparkles, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Sparkles, Loader2, X } from 'lucide-react';
 import { loginUser, registerUser } from '../services/authService';
 import { saveBaby } from '../services/babyService';
+import TermsOfUseScreen from './TermsOfUseScreen';
+import PrivacyPolicyScreen from './PrivacyPolicyScreen';
 
 interface LoginScreenProps {
   onLoginSuccess: (email: string) => void;
@@ -14,6 +16,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [babyName, setBabyName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +28,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
     if (!isLogin && !babyName.trim()) {
       setError('Por favor, digite o nome do bebê.');
+      return;
+    }
+    if (!isLogin && !acceptTerms) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade.');
       return;
     }
     
@@ -66,7 +75,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           Baby Grow
         </h2>
         <p className="text-sm text-slate-400 mt-2 text-center max-w-xs">
-          Acompanhe mamadas, frutinhas, refeições e o crescimento saudável do seu bebê.
+          Acompanhe mamadas, frutinhas, refeições e o crescimento do seu bebê.
         </p>
       </div>
 
@@ -74,7 +83,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6">
         <div className="flex border-b border-slate-100 pb-4 mb-4">
           <button
-            onClick={() => { setIsLogin(true); setError(''); }}
+            onClick={() => { setIsLogin(true); setError(''); setAcceptTerms(false); }}
             className={`flex-1 text-center py-2 font-bold text-sm transition-all ${
               isLogin ? 'text-orange-500 border-b-2 border-orange-500' : 'text-slate-400'
             }`}
@@ -82,7 +91,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             Entrar
           </button>
           <button
-            onClick={() => { setIsLogin(false); setError(''); }}
+            onClick={() => { setIsLogin(false); setError(''); setAcceptTerms(false); }}
             className={`flex-1 text-center py-2 font-bold text-sm transition-all ${
               !isLogin ? 'text-orange-500 border-b-2 border-orange-500' : 'text-slate-400'
             }`}
@@ -139,6 +148,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
+          {!isLogin && (
+            <div className="flex items-start gap-2 py-1 select-none">
+              <input
+                type="checkbox"
+                id="acceptTerms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer shrink-0"
+              />
+              <label htmlFor="acceptTerms" className="text-xs text-slate-500 leading-normal cursor-pointer">
+                Li e concordo com os{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-orange-500 hover:underline font-bold inline-block"
+                >
+                  Termos de Uso
+                </button>{' '}
+                e{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="text-orange-500 hover:underline font-bold inline-block"
+                >
+                  Política de Privacidade
+                </button>
+                .
+              </label>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isLoading}
@@ -175,6 +215,72 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           O modo convidado armazena as informações localmente no celular e não requer chaves reais do Firebase.
         </p>
       </div>
+
+      {/* Terms of Use Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-xs">
+          <div className="bg-[#FFF8F0] rounded-3xl w-full max-w-sm shadow-xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="px-5 py-4 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold text-slate-800">Termos de Uso</h3>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-650 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <TermsOfUseScreen />
+            </div>
+            <div className="p-4 bg-white border-t border-slate-100 flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setAcceptTerms(true);
+                  setShowTermsModal(false);
+                }}
+                className="flex-1 py-3 bg-[#FF7A00] hover:bg-orange-600 text-white font-bold rounded-2xl text-xs shadow-md shadow-orange-100 cursor-pointer"
+              >
+                Aceitar e Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-xs">
+          <div className="bg-[#FFF8F0] rounded-3xl w-full max-w-sm shadow-xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="px-5 py-4 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
+              <h3 className="text-sm font-bold text-slate-800">Política de Privacidade</h3>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-650 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <PrivacyPolicyScreen />
+            </div>
+            <div className="p-4 bg-white border-t border-slate-100 flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setAcceptTerms(true);
+                  setShowPrivacyModal(false);
+                }}
+                className="flex-1 py-3 bg-[#FF7A00] hover:bg-orange-600 text-white font-bold rounded-2xl text-xs shadow-md shadow-orange-100 cursor-pointer"
+              >
+                Aceitar e Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

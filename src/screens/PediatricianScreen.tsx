@@ -21,6 +21,7 @@ interface PediatricianScreenProps {
   fruits: FruitLog[];
   meals: MealLog[];
   initialNotes: string;
+  userRole?: 'admin' | 'cuidador' | 'leitura';
   onSaveNotes: (notes: string) => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export const PediatricianScreen: React.FC<PediatricianScreenProps> = ({
   fruits,
   meals,
   initialNotes,
+  userRole = 'admin',
   onSaveNotes
 }) => {
   const [period, setPeriod] = useState<7 | 30>(7);
@@ -624,22 +626,25 @@ _Gerado via aplicativo Rotina Alimentar Bebê_`;
 
         <textarea
           rows={3}
-          placeholder="Ex: Maya tem tomado pouca água. Perguntar se posso oferecer suco natural ou água de coco..."
+          placeholder={userRole === 'leitura' ? 'Modo de leitura apenas.' : 'Ex: Maya tem tomado pouca água. Perguntar se posso oferecer suco natural ou água de coco...'}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-2xl focus:outline-none focus:border-indigo-400 text-xs font-medium text-slate-800"
+          disabled={userRole === 'leitura'}
+          className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-2xl focus:outline-none focus:border-indigo-400 text-xs font-medium text-slate-800 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
         />
 
-        <button
-          onClick={handleSaveNotes}
-          disabled={isSavingNotes}
-          className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs text-white active:scale-95 transition-all cursor-pointer ${
-            saveSuccess ? 'bg-emerald-500' : 'bg-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          {saveSuccess ? <CheckCircle2 className="w-4 h-4 animate-bounce" /> : <Save className="w-4 h-4" />}
-          {isSavingNotes ? 'Salvando...' : saveSuccess ? 'Anotações Salvas!' : 'Salvar no Firebase'}
-        </button>
+        {userRole !== 'leitura' && (
+          <button
+            onClick={handleSaveNotes}
+            disabled={isSavingNotes}
+            className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs text-white active:scale-95 transition-all cursor-pointer ${
+              saveSuccess ? 'bg-emerald-500' : 'bg-slate-800 hover:bg-slate-900'
+            }`}
+          >
+            {saveSuccess ? <CheckCircle2 className="w-4 h-4 animate-bounce" /> : <Save className="w-4 h-4" />}
+            {isSavingNotes ? 'Salvando...' : saveSuccess ? 'Anotações Salvas!' : 'Salvar relatório'}
+          </button>
+        )}
       </div>
     </div>
   );

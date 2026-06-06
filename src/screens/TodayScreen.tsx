@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import type { Baby, FeedingLog, FruitLog, MealLog, Reminder, GrowthRecord } from '../types';
-import { Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, Power, TrendingUp, Scale, Ruler } from 'lucide-react';
+import type { 
+  Baby, FeedingLog, FruitLog, MealLog, Reminder, GrowthRecord,
+  SleepRecord, DiaperRecord, MedicationLog 
+} from '../types';
+import { 
+  Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, 
+  TrendingUp, Moon, Pill, Pencil 
+} from 'lucide-react';
 import { getTodaySummary, isToday } from '../services/summaryService';
-import { calculatePercentile } from '../data/growthPercentiles';
+import { getActiveSleepRecord, calculateHoursSleptToday } from '../services/sleepService';
 
 interface TodayScreenProps {
   baby: Baby;
@@ -11,11 +17,15 @@ interface TodayScreenProps {
   meals: MealLog[];
   growthRecords: GrowthRecord[];
   reminders: Reminder[];
+  sleepRecords?: SleepRecord[];
+  diaperRecords?: DiaperRecord[];
+  medicationLogs?: MedicationLog[];
+  userRole?: 'admin' | 'cuidador' | 'leitura';
   onNavigate: (screen: string) => void;
   onAddWaterLog: (ml: number) => void;
-  onDeleteLog: (id: string) => void;
+  onDeleteLog: (id: string, logType: 'feeding' | 'fruit' | 'meal' | 'sleep' | 'diaper' | 'medication') => void;
   onCompleteReminder: (reminder: Reminder) => void;
-  onToggleReminder: (id: string) => void;
+  onEditFeeding?: (feeding: FeedingLog) => void;
 }
 
 export const TodayScreen: React.FC<TodayScreenProps> = ({
@@ -25,50 +35,19 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   meals,
   growthRecords,
   reminders,
+  sleepRecords = [],
+  diaperRecords = [],
+  medicationLogs = [],
+  userRole = 'admin',
   onNavigate,
   onAddWaterLog,
   onDeleteLog,
   onCompleteReminder,
-  onToggleReminder
+  onEditFeeding
 }) => {
   const [waterAmount, setWaterAmount] = useState(50);
   const [showWaterSuccess, setShowWaterSuccess] = useState(false);
 
-  // Helper: Calculate baby's age at a specific past date
-  const calculateAgeAtDate = (birthDateStr: string, targetDateStr: string) => {
-    if (!birthDateStr || !targetDateStr) return '';
-    const birthDate = new Date(birthDateStr);
-    const targetDate = new Date(targetDateStr);
-    
-    let years = targetDate.getFullYear() - birthDate.getFullYear();
-    let months = targetDate.getMonth() - birthDate.getMonth();
-    let days = targetDate.getDate() - birthDate.getDate();
-
-    if (days < 0) {
-      months -= 1;
-      const prevMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0);
-      days += prevMonth.getDate();
-    }
-    
-    if (months < 0) {
-      years -= 1;
-      months += 12;
-    }
-
-    const totalMonths = years * 12 + months;
-
-    if (totalMonths === 0) {
-      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
-    }
-    
-    if (days === 0) {
-      return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
-    }
-    
-    return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`;
-  };
-
-  // Helper: Calculate baby's age in months and days
   const calculateAge = (birthDateStr: string) => {
     if (!birthDateStr) return '';
     const birthDate = new Date(birthDateStr);
@@ -90,27 +69,60 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
     }
 
     const totalMonths = years * 12 + months;
-
-    if (totalMonths === 0) {
-      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
-    }
-    
-    if (days === 0) {
-      return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
-    }
-    
+    if (totalMonths === 0) return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    if (days === 0) return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
     return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`;
   };
 
-  // Calculate today's summary using the summary service
   const summary = getTodaySummary(feedings, fruits, meals);
 
-  // Combine and filter today's logs for the timeline
+  const getLastFeedingSummary = () => {
+    const lf = feedings.find(f => f.type !== 'water');
+    if (!lf) return 'Nenhuma mamada';
+    
+    const typeLabel = lf.type === 'breast' ? 'leite materno' : lf.type === 'formula' ? 'fórmula' : 'misto';
+    const parts: string[] = [typeLabel];
+    
+    if (lf.type === 'breast' || lf.type === 'mixed') {
+      if (lf.durationMinutes) {
+        parts.push(`${Math.floor(lf.durationMinutes)} min`);
+      }
+      if (lf.breastSide) {
+        const sideLabel = lf.breastSide === 'left' 
+          ? 'esquerdo' 
+          : lf.breastSide === 'right' 
+            ? 'direito' 
+            : 'esquerdo e direito';
+        parts.push(sideLabel);
+      }
+    }
+    
+    if (lf.type === 'formula' || lf.type === 'mixed') {
+      if (lf.amountMl) {
+        parts.push(`${lf.amountMl} ml`);
+      }
+    }
+    
+    return `Última: ${parts.join(', ')}`;
+  };
+  const activeSleep = getActiveSleepRecord(sleepRecords);
+  const hoursSleptToday = calculateHoursSleptToday(sleepRecords);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayDiapers = diaperRecords.filter(r => r.datetime.startsWith(todayStr));
+  const diapersCountToday = todayDiapers.length;
+
+  const nextMedReminder = reminders
+    .filter(r => r.type === 'medicamento' && r.active && r.nextTriggerAt > 0)
+    .sort((a, b) => a.nextTriggerAt - b.nextTriggerAt)[0];
+
   const todayFeedings = feedings.filter(f => isToday(f.datetime)).map(f => ({ ...f, logType: 'feeding' as const }));
   const todayFruits = fruits.filter(fr => isToday(fr.datetime)).map(fr => ({ ...fr, logType: 'fruit' as const }));
   const todayMeals = meals.filter(m => isToday(m.datetime)).map(m => ({ ...m, logType: 'meal' as const }));
+  const todaySleep = sleepRecords.filter(s => isToday(s.startDateTime)).map(s => ({ ...s, logType: 'sleep' as const, datetime: s.startDateTime }));
+  const todayDiapersList = diaperRecords.filter(d => isToday(d.datetime)).map(d => ({ ...d, logType: 'diaper' as const }));
+  const todayMeds = medicationLogs.filter(ml => isToday(ml.datetime)).map(ml => ({ ...ml, logType: 'medication' as const }));
 
-  const todayLogs = [...todayFeedings, ...todayFruits, ...todayMeals].sort((a, b) => 
+  const todayLogs = [...todayFeedings, ...todayFruits, ...todayMeals, ...todaySleep, ...todayDiapersList, ...todayMeds].sort((a, b) => 
     b.datetime.localeCompare(a.datetime)
   );
 
@@ -122,506 +134,293 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
 
   const getFormatTime = (datetimeStr: string) => {
     if (!datetimeStr) return '';
-    const timePart = datetimeStr.split('T')[1]; // HH:MM
-    return timePart || '';
+    const timePart = datetimeStr.split('T')[1];
+    return timePart ? timePart.substring(0, 5) : '';
   };
 
   return (
     <div className="flex-1 flex flex-col px-4 py-4 space-y-5">
-      {/* Baby Header Card */}
       <div className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-3xl p-5 text-white shadow-md shadow-orange-100 flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-orange-100 font-bold">Meu Bebê</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-orange-100">Meu Bebê</span>
           <h2 className="text-2xl font-black mt-0.5">{baby.name}</h2>
-          <p className="text-xs text-orange-50 font-semibold mt-1">
-            Idade: {calculateAge(baby.birthDate)}
-          </p>
+          <p className="text-xs text-orange-50 font-semibold mt-1">Idade: {calculateAge(baby.birthDate)}</p>
         </div>
-        <div className="text-4xl">
-          {baby.gender === 'girl' ? '👧' : baby.gender === 'boy' ? '👦' : '👶'}
-        </div>
+        <div className="text-4xl">{baby.gender === 'girl' ? '👧' : baby.gender === 'boy' ? '👦' : '👶'}</div>
       </div>
 
-      {/* Widget de Lembretes do Dia */}
+      {activeSleep && (
+        <div 
+          onClick={() => onNavigate('sleep')}
+          className="bg-indigo-900 border border-indigo-850 hover:bg-indigo-950 text-white rounded-3xl p-4 flex items-center justify-between shadow-md cursor-pointer animate-pulse"
+        >
+          <div className="flex items-center gap-3">
+            <Moon className="w-5 h-5 text-indigo-350 fill-indigo-350" />
+            <div>
+              <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider block">Em andamento</span>
+              <span className="text-xs font-black block mt-0.5">{baby.name} está dormindo</span>
+            </div>
+          </div>
+          <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-lg font-bold">
+            Iniciou às {activeSleep.startDateTime.split('T')[1].substring(0, 5)}
+          </span>
+        </div>
+      )}
+
       {(reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ||
-        reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0 ||
-        reminders.filter(r => {
-          if (!r.lastCompletedAt) return false;
-          const compDate = new Date(r.lastCompletedAt);
-          const today = new Date();
-          return compDate.getDate() === today.getDate() &&
-                 compDate.getMonth() === today.getMonth() &&
-                 compDate.getFullYear() === today.getFullYear();
-        }).length > 0) && (
+        reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0) && (
         <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-3">
           <h3 className="text-sm font-bold text-slate-800 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">⏰ Lembretes e Rotina</span>
-            <button 
-              onClick={() => onNavigate('reminders')}
-              className="text-xs text-pink-500 font-bold hover:underline cursor-pointer"
-            >
-              Configurar
-            </button>
+            <span className="flex items-center gap-1.5">⏰ Lembretes</span>
+            {userRole !== 'leitura' && (
+              <button onClick={() => onNavigate('reminders')} className="text-xs text-pink-500 font-bold hover:underline">Configurar</button>
+            )}
           </h3>
-          
-          {/* Vencidos (Urgentes) */}
           {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ? (
-            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-rose-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                  {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length} Lembrete(s) Pendente(s)!
-                </span>
-              </div>
-              
-              {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).slice(0, 2).map(r => (
-                <div key={r.id} className="flex items-center justify-between gap-2 bg-white/70 border border-rose-200/50 p-2.5 rounded-xl">
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-850 block truncate">{r.title}</span>
-                    <span className="text-[10px] text-rose-600 font-bold">
-                      Atrasado desde: {r.mode === 'fixed' ? r.fixedTime : new Date(r.nextTriggerAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => onCompleteReminder(r)}
-                      className="p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
-                      title="Concluir Lembrete"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onToggleReminder(r.id!)}
-                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-rose-600 rounded-lg active:scale-90 transition-transform cursor-pointer flex items-center justify-center"
-                      title="Desativar Lembrete (Parar)"
-                    >
-                      <Power className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
+              <span className="text-rose-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> Pendente!
+              </span>
+              {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).slice(0, 1).map(r => (
+                <div key={r.id} className="mt-2 flex items-center justify-between gap-2 bg-white/70 border border-rose-200/50 p-2.5 rounded-xl">
+                  <span className="text-xs font-bold truncate">{r.title}</span>
+                  <button
+                    onClick={() => {
+                      if (userRole === 'leitura') return;
+                      onCompleteReminder(r);
+                    }}
+                    disabled={userRole === 'leitura'}
+                    className={`p-1.5 rounded-lg active:scale-90 ${userRole === 'leitura' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-rose-500 text-white'}`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
-              {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 2 && (
-                <p className="text-[9px] text-rose-500 font-bold text-center">
-                  E mais {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length - 2} lembrete(s)...
-                </p>
-              )}
             </div>
           ) : (
-            /* Próximo Lembrete */
             reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0 && (
               <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <span className="text-indigo-600 text-[9px] font-bold uppercase tracking-wider block">Próxima Atividade</span>
-                  <h4 className="text-xs font-bold text-slate-800 mt-0.5">{reminders.filter(r => r.active && r.nextTriggerAt > Date.now())[0].title}</h4>
-                  <span className="text-[10px] text-slate-500 font-semibold block mt-1">
-                    Agendado para: {new Date(reminders.filter(r => r.active && r.nextTriggerAt > Date.now())[0].nextTriggerAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </span>
+                  <span className="text-indigo-600 text-[9px] font-bold uppercase tracking-wider">Próxima Atividade</span>
+                  <h4 className="text-xs font-bold text-slate-800">{reminders.filter(r => r.active && r.nextTriggerAt > Date.now())[0].title}</h4>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5" />
-                </div>
+                <Clock className="w-5 h-5 text-indigo-600" />
               </div>
             )
-          )}
-          
-          {/* Concluídos do dia */}
-          {reminders.filter(r => {
-            if (!r.lastCompletedAt) return false;
-            const compDate = new Date(r.lastCompletedAt);
-            const today = new Date();
-            return compDate.getDate() === today.getDate() &&
-                   compDate.getMonth() === today.getMonth() &&
-                   compDate.getFullYear() === today.getFullYear();
-          }).length > 0 && (
-            <div className="flex items-center gap-1 pl-1 text-[10px] text-emerald-600 font-bold">
-              <span>✓</span>
-              <span>{reminders.filter(r => {
-                if (!r.lastCompletedAt) return false;
-                const compDate = new Date(r.lastCompletedAt);
-                const today = new Date();
-                return compDate.getDate() === today.getDate() &&
-                       compDate.getMonth() === today.getMonth() &&
-                       compDate.getFullYear() === today.getFullYear();
-              }).length} lembrete(s) concluído(s) hoje</span>
-            </div>
           )}
         </div>
       )}
 
-      {/* Today's Metas summary widgets */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-          <span>🎯</span> Resumo de Hoje
-        </h3>
+      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><span>🎯</span> Resumo de Hoje</h3>
         <div className="grid grid-cols-2 gap-3">
-          {/* Mamadas */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50/50">
-            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-              <Milk className="w-5 h-5" />
-            </div>
-            <div>
+          <div onClick={() => onNavigate('feedings')} className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50/50 cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><Milk className="w-5 h-5" /></div>
+            <div className="min-w-0 flex-1">
               <span className="text-[10px] text-slate-400 font-bold block leading-none">Mamadas</span>
-              <span className="text-base font-black text-slate-800 mt-1 block leading-none">{summary.totalBreastfeedings}</span>
-              {summary.totalFormulaMl > 0 && (
-                <span className="text-[9px] text-amber-700 font-bold mt-0.5 block">{summary.totalFormulaMl}ml fórmula</span>
-              )}
+              <span className="text-base font-black">{summary.totalBreastfeedings}</span>
+              <span className="text-[9px] text-slate-500 font-medium block truncate mt-0.5" title={getLastFeedingSummary()}>
+                {getLastFeedingSummary()}
+              </span>
             </div>
           </div>
-
-          {/* Refeições prato */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-teal-50/50">
-            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
-              <Utensils className="w-5 h-5" />
-            </div>
+          <div onClick={() => onNavigate('feedings')} className="flex items-center gap-3 p-3 rounded-2xl bg-teal-50/50 cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center"><Utensils className="w-5 h-5" /></div>
             <div>
               <span className="text-[10px] text-slate-400 font-bold block leading-none">Refeições</span>
-              <span className="text-base font-black text-slate-800 mt-1 block leading-none">{summary.mealsCount} pratos</span>
-              <span className="text-[9px] text-teal-700 font-bold mt-0.5 block">meta: 2</span>
+              <span className="text-base font-black">{summary.mealsCount}</span>
+            </div>
+          </div>
+          <div onClick={() => onNavigate('sleep')} className="flex items-center gap-3 p-3 rounded-2xl bg-indigo-50/50 cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center"><Moon className="w-5 h-5" /></div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold block leading-none">Sono</span>
+              <span className="text-base font-black">{hoursSleptToday}h</span>
+            </div>
+          </div>
+          <div onClick={() => onNavigate('diapers')} className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50/50 cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-500 flex items-center justify-center"><Droplet className="w-5 h-5" /></div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold block leading-none">Fraldas</span>
+              <span className="text-base font-black">{diapersCountToday}</span>
             </div>
           </div>
         </div>
-
-        {/* Frutas de hoje */}
-        <div className="mt-3 p-3 rounded-2xl bg-pink-50/50 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-            <Apple className="w-5 h-5" />
+        {summary.fruitsOffered.length > 0 && (
+          <div className="p-3 bg-pink-50/50 rounded-2xl flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center"><Apple className="w-5 h-5" /></div>
+            <div className="min-w-0">
+              <span className="text-[10px] text-slate-400 font-bold block leading-none">Frutas Oferecidas</span>
+              <p className="text-xs font-semibold text-slate-700 mt-1 truncate">{summary.fruitsOffered.join(', ')}</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <span className="text-[10px] text-slate-400 font-bold block leading-none">Frutas Oferecidas</span>
-            <p className="text-xs font-semibold text-slate-700 mt-1 truncate">
-              {summary.fruitsOffered.length > 0 
-                ? summary.fruitsOffered.join(', ')
-                : 'Nenhuma fruta ainda'
-              }
-            </p>
+        )}
+        {nextMedReminder && (
+          <div onClick={() => onNavigate('medications')} className="p-3 bg-orange-50/50 cursor-pointer rounded-2xl flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><Pill className="w-5 h-5" /></div>
+            <div className="min-w-0">
+              <span className="text-[10px] text-slate-400 font-bold block leading-none">PRÓXIMO MEDICAMENTO</span>
+              <p className="text-xs font-bold text-slate-800 mt-1 truncate">{nextMedReminder.title}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Growth Tracking Summary Card */}
       {(() => {
-        const sortedGrowth = growthRecords && growthRecords.length > 0
-          ? [...growthRecords].sort((a, b) => b.date.localeCompare(a.date))
-          : [];
-        const latestGrowthRecord = sortedGrowth.length > 0 ? sortedGrowth[0] : null;
-        const prevGrowthRecord = sortedGrowth.length > 1 ? sortedGrowth[1] : undefined;
+        const sortedGrowth = growthRecords && growthRecords.length > 0 ? [...growthRecords].sort((a, b) => b.date.localeCompare(a.date)) : [];
+        const latestGrowthRecord = sortedGrowth[0];
 
         if (latestGrowthRecord) {
-          const ageText = calculateAgeAtDate(baby.birthDate, latestGrowthRecord.date);
-          const pWeight = calculatePercentile(baby.gender, 'weight', latestGrowthRecord.ageInDays, latestGrowthRecord.weightKg);
-          const pLength = calculatePercentile(baby.gender, 'length', latestGrowthRecord.ageInDays, latestGrowthRecord.lengthCm);
-
-          let weightDiffText = '';
-          let lengthDiffText = '';
-          if (prevGrowthRecord) {
-            const wDiff = latestGrowthRecord.weightKg - prevGrowthRecord.weightKg;
-            const lDiff = latestGrowthRecord.lengthCm - prevGrowthRecord.lengthCm;
-            weightDiffText = wDiff >= 0 ? `+${wDiff.toFixed(2)} kg` : `${wDiff.toFixed(2)} kg`;
-            lengthDiffText = lDiff >= 0 ? `+${lDiff.toFixed(1)} cm` : `${lDiff.toFixed(1)} cm`;
-          }
-
           return (
             <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-orange-500" />
-                  Acompanhamento de Crescimento
-                </h3>
-                <button
-                  onClick={() => onNavigate('growth')}
-                  className="text-[10px] text-orange-500 font-extrabold hover:underline cursor-pointer"
-                >
-                  Ver Gráficos
-                </button>
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-[#FF7A00]" /> Crescimento</h3>
+                <button onClick={() => onNavigate('growth')} className="text-[10px] text-[#FF7A00] font-extrabold hover:underline">Ver Gráficos</button>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
-                {/* Weight Card */}
-                <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                    <Scale className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 font-bold block leading-none">Peso</span>
-                    <span className="text-sm font-black text-slate-800 mt-1 block leading-none">
-                      {latestGrowthRecord.weightKg} kg
-                    </span>
-                    <span className="text-[8px] text-orange-600 font-bold mt-1 block leading-none">
-                      Percentil: {pWeight.percentileText}
-                    </span>
-                    {weightDiffText && (
-                      <span className="text-[8px] text-slate-400 block mt-0.5 leading-none">
-                        Variação: {weightDiffText}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Length Card */}
-                <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <Ruler className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 font-bold block leading-none">Comprimento</span>
-                    <span className="text-sm font-black text-slate-800 mt-1 block leading-none">
-                      {latestGrowthRecord.lengthCm} cm
-                    </span>
-                    <span className="text-[8px] text-blue-600 font-bold mt-1 block leading-none">
-                      Percentil: {pLength.percentileText}
-                    </span>
-                    {lengthDiffText && (
-                      <span className="text-[8px] text-slate-400 block mt-0.5 leading-none">
-                        Variação: {lengthDiffText}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                <div className="bg-slate-50 rounded-2xl p-3"><span className="text-[9px] text-slate-400 font-bold">Peso</span><p className="text-sm font-black">{latestGrowthRecord.weightKg} kg</p></div>
+                <div className="bg-slate-50 rounded-2xl p-3"><span className="text-[9px] text-slate-400 font-bold">Comprimento</span><p className="text-sm font-black">{latestGrowthRecord.lengthCm} cm</p></div>
               </div>
-
-              <p className="text-[9px] text-slate-400 font-medium text-center leading-none">
-                Última medição em {latestGrowthRecord.date.split('-').reverse().join('/')} (com {ageText})
-              </p>
-            </div>
-          );
-        } else {
-          return (
-            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center space-y-3">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center justify-center gap-1.5 leading-none">
-                <TrendingUp className="w-4 h-4 text-orange-500" />
-                Crescimento do Bebê
-              </h3>
-              <p className="text-xs text-slate-400 max-w-[240px] mx-auto leading-relaxed">
-                Acompanhe o peso e altura do bebê comparando com a curva de referência da OMS.
-              </p>
-              <button
-                onClick={() => onNavigate('growth')}
-                className="py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl text-xs active:scale-95 transition-all shadow-md shadow-orange-100 cursor-pointer inline-block"
-              >
-                Registrar Primeira Medida
-              </button>
             </div>
           );
         }
+        return (
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center">
+            <h3 className="text-sm font-bold text-slate-800">Crescimento do Bebê</h3>
+            <button onClick={() => onNavigate('growth')} className="mt-3 py-2 px-4 bg-[#FF7A00] text-white font-bold rounded-2xl text-xs">Registrar Medida</button>
+          </div>
+        );
       })()}
 
-      {/* Quick register buttons */}
+      {userRole !== 'leitura' && (
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3">Registrar Atividades</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <button onClick={() => onNavigate('feed-breast')} className="p-4 rounded-3xl bg-amber-50 flex flex-col items-center gap-2 font-bold"><Milk className="text-amber-500" /><span className="text-xs">Mamada</span></button>
+            <button onClick={() => onNavigate('sleep')} className="p-4 rounded-3xl bg-indigo-50 flex flex-col items-center gap-2 font-bold"><Moon className="text-indigo-900" /><span className="text-xs">Sono</span></button>
+            <button onClick={() => onNavigate('diapers')} className="p-4 rounded-3xl bg-blue-50 flex flex-col items-center gap-2 font-bold"><Droplet className="text-blue-500" /><span className="text-xs">Fralda</span></button>
+          </div>
+        </div>
+      )}
+
+      {userRole !== 'leitura' && (
+        <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-5">
+          <div className="flex items-center gap-2 mb-3"><Droplet className="w-4 h-4" /><h3 className="text-sm font-bold">Registrar Água</h3></div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 grid grid-cols-3 gap-2">{[30, 50, 100].map(amt => <button key={amt} onClick={() => setWaterAmount(amt)} className={`py-2 rounded-xl text-xs font-bold ${waterAmount === amt ? 'bg-blue-500 text-white' : 'bg-white'}`}>{amt}ml</button>)}</div>
+            <button onClick={handleQuickWater} className={`py-3 px-4 rounded-2xl text-xs text-white ${showWaterSuccess ? 'bg-emerald-500' : 'bg-blue-600'}`}>{showWaterSuccess ? 'Salvo!' : 'Adicionar'}</button>
+          </div>
+        </div>
+      )}
+
       <div>
-        <h3 className="text-sm font-bold text-slate-800 mb-3">Registrar Alimentação</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {/* Mamada */}
-          <button
-            onClick={() => onNavigate('feed-breast')}
-            className="p-4 rounded-3xl bg-amber-50 border border-amber-100 text-amber-800 flex flex-col items-center justify-center gap-2 font-bold hover:bg-amber-100 active:scale-95 transition-all cursor-pointer shadow-sm"
-          >
-            <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center">
-              <Milk className="w-5 h-5" />
-            </div>
-            <span className="text-xs">Mamada</span>
-          </button>
-
-          {/* Fruta */}
-          <button
-            onClick={() => onNavigate('feed-fruit')}
-            className="p-4 rounded-3xl bg-pink-50 border border-pink-100 text-pink-800 flex flex-col items-center justify-center gap-2 font-bold hover:bg-pink-100 active:scale-95 transition-all cursor-pointer shadow-sm"
-          >
-            <div className="w-10 h-10 rounded-full bg-pink-500 text-white flex items-center justify-center">
-              <Apple className="w-5 h-5" />
-            </div>
-            <span className="text-xs">Fruta</span>
-          </button>
-
-          {/* Refeição */}
-          <button
-            onClick={() => onNavigate('feed-meal')}
-            className="p-4 rounded-3xl bg-teal-50 border border-teal-100 text-teal-800 flex flex-col items-center justify-center gap-2 font-bold hover:bg-teal-100 active:scale-95 transition-all cursor-pointer shadow-sm"
-          >
-            <div className="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center">
-              <Utensils className="w-5 h-5" />
-            </div>
-            <span className="text-xs">Refeição</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Water logger */}
-      <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-5 flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
-            <Droplet className="w-4 h-4 fill-current" />
-          </div>
-          <h3 className="text-sm font-bold text-blue-900">Registrar Água Rápido</h3>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex-1 grid grid-cols-3 gap-2">
-            {[30, 50, 100].map((amount) => (
-              <button
-                key={amount}
-                type="button"
-                onClick={() => setWaterAmount(amount)}
-                className={`py-2 px-1 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
-                  waterAmount === amount
-                    ? 'border-blue-400 bg-blue-500 text-white shadow-sm'
-                    : 'border-blue-200 bg-white text-blue-700'
-                }`}
-              >
-                {amount}ml
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handleQuickWater}
-            className={`py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-1.5 text-xs text-white active:scale-95 transition-all min-w-[90px] cursor-pointer ${
-              showWaterSuccess ? 'bg-emerald-500' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {showWaterSuccess ? <Check className="w-4 h-4" /> : <Droplet className="w-4 h-4" />}
-            {showWaterSuccess ? 'Salvo!' : 'Adicionar'}
-          </button>
-        </div>
-      </div>
-
-      {/* Last Activities summary cards */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-4 shadow-sm space-y-3">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Últimas Atividades</h3>
-        <div className="space-y-2 text-xs">
-          {/* Last feeding */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-            <div className="flex items-center gap-2">
-              <Milk className="w-4 h-4 text-amber-500" />
-              <span className="font-semibold text-slate-700">Última Mamada:</span>
-              <span className="text-slate-500">
-                {summary.lastBreastfeeding 
-                  ? (summary.lastBreastfeeding.type === 'breast' ? 'Leite Materno' : `Fórmula: ${summary.lastBreastfeeding.amountMl}ml`)
-                  : 'Nenhum registro'
+        <h3 className="text-sm font-bold text-slate-800 mb-3">Linha do Tempo</h3>
+        <div className="space-y-3">
+          {todayLogs.map(log => {
+            let label = '', desc = '', icon = null, color = '';
+            switch (log.logType) {
+              case 'feeding': {
+                const f = log as any;
+                label = f.type === 'breast' ? 'Amamentação' : f.type === 'formula' ? 'Fórmula' : f.type === 'mixed' ? 'Misto' : 'Água';
+                if (f.type === 'water') {
+                  desc = f.amountMl ? `${f.amountMl} ml` : '';
+                } else {
+                  const parts: string[] = [];
+                  if (f.durationMinutes) {
+                    let split = '';
+                    if (f.leftBreastDurationSeconds || f.rightBreastDurationSeconds) {
+                      const leftMin = Math.floor((f.leftBreastDurationSeconds || 0) / 60);
+                      const rightMin = Math.floor((f.rightBreastDurationSeconds || 0) / 60);
+                      split = ` (esq ${leftMin}m, dir ${rightMin}m)`;
+                    }
+                    parts.push(`${f.durationMinutes} min${split}`);
+                  }
+                  if (f.amountMl) {
+                    parts.push(`${f.amountMl} ml`);
+                  }
+                  desc = parts.join(' | ') || 'Amamentação livre';
                 }
-              </span>
-            </div>
-            {summary.lastBreastfeeding && (
-              <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {getFormatTime(summary.lastBreastfeeding.datetime)}
-              </span>
-            )}
-          </div>
-
-          {/* Last fruit */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-            <div className="flex items-center gap-2">
-              <Apple className="w-4 h-4 text-pink-500" />
-              <span className="font-semibold text-slate-700">Última Fruta:</span>
-              <span className="text-slate-500">
-                {summary.lastFruit ? summary.lastFruit.fruitName : 'Nenhum registro'}
-              </span>
-            </div>
-            {summary.lastFruit && (
-              <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {getFormatTime(summary.lastFruit.datetime)}
-              </span>
-            )}
-          </div>
-
-          {/* Last meal */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-            <div className="flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-teal-600" />
-              <span className="font-semibold text-slate-700">Último Prato:</span>
-              <span className="text-slate-500">
-                {summary.lastMeal ? `${summary.lastMeal.foodName} (${summary.lastMeal.category})` : 'Nenhum registro'}
-              </span>
-            </div>
-            {summary.lastMeal && (
-              <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {getFormatTime(summary.lastMeal.datetime)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Today's activities timeline */}
-      <div>
-        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
-          <span>📋 Linha do Tempo de Hoje</span>
-          <span className="text-xs text-slate-400 font-semibold">{todayLogs.length} itens</span>
-        </h3>
-
-        {todayLogs.length === 0 ? (
-          <div className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-8 text-center text-slate-400">
-            <p className="text-sm font-medium">Nenhum registro hoje.</p>
-            <p className="text-xs mt-1">Toque nos botões acima para registrar!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {todayLogs.map((log) => {
-              const timeStr = getFormatTime(log.datetime);
-              let label = '';
-              let desc = '';
-              let color = '';
-              let icon = null;
-
-              switch (log.logType) {
-                case 'feeding':
-                  const fLog = log as FeedingLog;
-                  label = fLog.type === 'water' ? 'Água' : 'Mamada';
-                  color = fLog.type === 'water' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-amber-100 text-amber-800 border-amber-200';
-                  icon = fLog.type === 'water' ? <Droplet className="w-3.5 h-3.5" /> : <Milk className="w-3.5 h-3.5" />;
-                  desc = fLog.type === 'water' 
-                    ? `Tomou ${fLog.amountMl}ml de água`
-                    : fLog.type === 'breast'
-                      ? `Leite Materno ${fLog.durationMinutes ? `(${fLog.durationMinutes} min)` : ''}`
-                      : `${fLog.type === 'formula' ? 'Fórmula' : 'Misto'}: ${fLog.amountMl}ml`;
-                  break;
-                case 'fruit':
-                  const frLog = log as FruitLog;
-                  label = 'Fruta';
-                  color = 'bg-pink-100 text-pink-800 border-pink-200';
-                  icon = <Apple className="w-3.5 h-3.5" />;
-                  desc = `${frLog.fruitName}${frLog.fruitType ? ` (${frLog.fruitType})` : ''} (${frLog.quantity})`;
-                  break;
-                case 'meal':
-                  const mLog = log as MealLog;
-                  label = 'Refeição';
-                  color = 'bg-teal-100 text-teal-800 border-teal-200';
-                  icon = <Utensils className="w-3.5 h-3.5" />;
-                  desc = `${mLog.foodName} - ${mLog.texture}`;
-                  break;
+                icon = <Milk className="w-3.5 h-3.5" />;
+                color = 'bg-amber-100';
+                break;
               }
-
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${color.split(' ')[0]} ${color.split(' ')[1]}`}>
-                      {icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-800">{label}</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">{timeStr}</span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-tight">{desc}</p>
-                      {log.notes && (
-                        <p className="text-[10px] text-slate-400 italic mt-0.5">"{log.notes}"</p>
-                      )}
-                    </div>
+              case 'fruit': {
+                const fr = log as any;
+                label = 'Frutinha';
+                desc = fr.fruitName + (fr.fruitType ? ` (${fr.fruitType})` : '');
+                icon = <Apple className="w-3.5 h-3.5 text-pink-600" />;
+                color = 'bg-pink-100';
+                break;
+              }
+              case 'meal': {
+                const m = log as any;
+                label = 'Refeição';
+                desc = m.foodName;
+                icon = <Utensils className="w-3.5 h-3.5 text-teal-600" />;
+                color = 'bg-teal-100';
+                break;
+              }
+              case 'sleep': {
+                const s = log as any;
+                label = s.sleepType === 'soneca' ? 'Soneca' : 'Sono Noturno';
+                desc = s.durationMinutes ? `${s.durationMinutes} min` : s.endDateTime ? 'Dormindo' : 'Em andamento';
+                icon = <Moon className="w-3.5 h-3.5 text-indigo-900" />;
+                color = 'bg-indigo-100';
+                break;
+              }
+              case 'diaper': {
+                const d = log as any;
+                label = 'Fralda';
+                desc = `${d.diaperType.charAt(0).toUpperCase() + d.diaperType.slice(1)}`;
+                if (d.stoolConsistency) {
+                  desc += ` (${d.stoolConsistency})`;
+                }
+                icon = <Droplet className="w-3.5 h-3.5 text-blue-500" />;
+                color = 'bg-blue-100';
+                break;
+              }
+              case 'medication': {
+                const ml = log as any;
+                label = 'Medicação';
+                desc = `${ml.medicationName} - ${ml.doseGiven}`;
+                icon = <Pill className="w-3.5 h-3.5 text-orange-600" />;
+                color = 'bg-orange-100';
+                break;
+              }
+              default:
+                label = 'Log';
+                desc = '';
+                icon = <Check className="w-3.5 h-3.5" />;
+                color = 'bg-slate-100';
+            }
+            return (
+              <div key={log.id} className="bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
+                  <div>
+                    <span className="text-xs font-bold block">{label}</span>
+                    {desc && <span className="text-[10px] text-slate-500 block">{desc}</span>}
+                    <span className="text-[10px] text-slate-400 block">{getFormatTime(log.datetime)}</span>
                   </div>
-
-                  <button
-                    onClick={() => onDeleteLog(log.id!)}
-                    className="p-1.5 text-slate-300 hover:text-rose-500 active:scale-90 transition-all rounded-full hover:bg-slate-50 cursor-pointer"
-                    aria-label="Excluir Registro"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                {userRole !== 'leitura' && (
+                  <div className="flex items-center gap-1">
+                    {log.logType === 'feeding' && log.type !== 'water' && (
+                      <button
+                        onClick={() => onEditFeeding?.(log as FeedingLog)}
+                        className="p-1.5 text-slate-350 hover:text-orange-505 active:scale-90 transition-all rounded-full hover:bg-slate-50 cursor-pointer"
+                        title="Editar Mamada"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button onClick={() => onDeleteLog(log.id!, log.logType as any)} className="text-slate-355 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

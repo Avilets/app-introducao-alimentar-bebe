@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Apple, Save, X, Calendar, BookOpen, AlertCircle } from 'lucide-react';
 import { FRUITS_DATABASE } from '../config/fruitsData';
 import type { QuantityScale, ReactionType } from '../types';
+import MedicalDisclaimer from '../components/MedicalDisclaimer';
 
 interface FeedFruitScreenProps {
   onSave: (details: {
@@ -198,10 +199,6 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
                 <p className="text-[10px] leading-relaxed"><span className="font-bold">Segurança:</span> {selectedFruitInfo.safety}</p>
               </div>
             </div>
-            
-            <p className="text-[9px] text-slate-400 font-medium italic text-center mt-1">
-              "Informações educativas. Em caso de dúvidas ou reações, converse com o pediatra."
-            </p>
           </div>
         )}
 
@@ -302,9 +299,12 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
             Salvar
           </button>
         </div>
+
+        <MedicalDisclaimer type="alimentacao" className="mt-4" />
       </form>
     </div>
   );
 };
 
 export default FeedFruitScreen;
+

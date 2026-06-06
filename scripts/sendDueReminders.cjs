@@ -71,17 +71,17 @@ async function run() {
   const now = Date.now();
 
   try {
-    // Buscar todos os usuários
-    const usersSnap = await db.collection('users').get();
-    console.log(`Total de usuários encontrados: ${usersSnap.size}`);
+    // Buscar todas as famílias no banco de dados
+    const familiesSnap = await db.collection('families').get();
+    console.log(`Total de famílias encontradas: ${familiesSnap.size}`);
 
-    for (const userDoc of usersSnap.docs) {
-      const userId = userDoc.id;
-      const userEmail = userDoc.data().email || 'E-mail não cadastrado';
-      console.log(`\nProcessando Usuário ID: ${userId} (${userEmail})`);
+    for (const familyDoc of familiesSnap.docs) {
+      const familyId = familyDoc.id;
+      const familyName = familyDoc.data().name || 'Família sem nome';
+      console.log(`\nProcessando Família ID: ${familyId} (${familyName})`);
 
-      // 3.1. Buscar lembretes do usuário
-      const remindersRef = db.collection('users').doc(userId).collection('reminders');
+      // 3.1. Buscar lembretes da família
+      const remindersRef = db.collection('families').doc(familyId).collection('reminders');
       const remindersSnap = await remindersRef.get();
       
       const dueReminders = [];
@@ -107,8 +107,8 @@ async function run() {
       console.log(`Lembretes vencidos identificados: ${dueReminders.length}`);
       if (dueReminders.length === 0) continue;
 
-      // 3.2. Buscar tokens FCM ativos do usuário
-      const tokensRef = db.collection('users').doc(userId).collection('notificationTokens');
+      // 3.2. Buscar tokens FCM ativos de todos os membros desta família
+      const tokensRef = db.collection('families').doc(familyId).collection('notificationTokens');
       const tokensSnap = await tokensRef.where('active', '==', true).get();
       
       const activeTokens = [];
@@ -121,9 +121,9 @@ async function run() {
         }
       });
 
-      console.log(`Tokens FCM ativos encontrados: ${activeTokens.length}`);
+      console.log(`Tokens FCM ativos da família encontrados: ${activeTokens.length}`);
       if (activeTokens.length === 0) {
-        console.log(`Usuário ${userId} não possui tokens registrados ou ativos. Ignorando disparos.`);
+        console.log(`Família ${familyId} não possui tokens registrados ou ativos. Ignorando disparos.`);
         continue;
       }
 
@@ -137,15 +137,31 @@ async function run() {
 
         switch (reminder.type) {
           case 'feeding':
-            notificationTitle = 'Hora da mamada';
+            notificationTitle = '🍼 Hora da mamada';
             notificationBody = reminder.title;
             break;
           case 'fruit':
-            notificationTitle = 'Hora da frutinha';
+            notificationTitle = '🍎 Hora da frutinha';
             notificationBody = reminder.title;
             break;
           case 'meal':
-            notificationTitle = 'Hora da refeição';
+            notificationTitle = '🍛 Hora da refeição';
+            notificationBody = reminder.title;
+            break;
+          case 'sleep':
+            notificationTitle = '💤 Hora do sono';
+            notificationBody = reminder.title;
+            break;
+          case 'diaper':
+            notificationTitle = '🚼 Hora de trocar a fralda';
+            notificationBody = reminder.title;
+            break;
+          case 'medication':
+            notificationTitle = '💊 Hora do medicamento';
+            notificationBody = reminder.title;
+            break;
+          case 'vacina':
+            notificationTitle = '💉 Hora da vacina';
             notificationBody = reminder.title;
             break;
           case 'other':
@@ -175,7 +191,7 @@ async function run() {
 
         try {
           const response = await messaging.sendEachForMulticast(message);
-          console.log(`Sucesso: ${response.successCount} notificações enviadas. Falhas: ${response.failureCount}.`);
+          console.log(`Sucesso: ${response.successCount} notificações enviadas para a família. Falhas: ${response.failureCount}.`);
 
           // Limpar tokens falhos (inválidos ou desinstalados)
           if (response.failureCount > 0) {
@@ -232,10 +248,10 @@ async function run() {
             active: active,
             updatedAt: now
           });
-          console.log(`Lembrete "${reminder.title}" atualizado: ativo=${active}, próximo disparo=${new Date(nextDueAt).toLocaleTimeString()}`);
+          console.log(`Lembrete "${reminder.title}" atualizado na família: ativo=${active}, próximo disparo=${new Date(nextDueAt).toLocaleTimeString()}`);
 
         } catch (sendErr) {
-          console.error(`Erro ao processar envio do lembrete ${reminder.id}:`, sendErr.message);
+          console.error(`Erro ao processar envio do lembrete ${reminder.id} na família:`, sendErr.message);
           
           // Registrar falha no documento do lembrete no Firestore
           try {
