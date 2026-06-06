@@ -1,0 +1,1 @@
+import{i as e}from"./index.esm-B5HKSP0h.js";export{e as onMessage};
