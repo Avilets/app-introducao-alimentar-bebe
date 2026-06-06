@@ -184,8 +184,17 @@ export const saveStoredReminders = (reminders: Reminder[]) => {
   localStorage.setItem('rt_reminders', JSON.stringify(reminders));
 };
 
+export const getStoredPediatricianNotes = (): string => {
+  return localStorage.getItem('rt_ped_notes') || '';
+};
+
+export const saveStoredPediatricianNotes = (notes: string) => {
+  localStorage.setItem('rt_ped_notes', notes);
+};
+
 export const resetStoredData = () => {
   localStorage.setItem('rt_baby', JSON.stringify(MOCK_BABY));
   localStorage.setItem('rt_logs', JSON.stringify(MOCK_LOGS));
   localStorage.setItem('rt_reminders', JSON.stringify(MOCK_REMINDERS));
+  localStorage.setItem('rt_ped_notes', 'O bebê tem aceitado bem as frutinhas pela manhã. Demonstrar atenção especial com reações a frutas cítricas.');
 };

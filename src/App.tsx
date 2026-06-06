@@ -14,6 +14,7 @@ import FeedMealScreen from './screens/FeedMealScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import RemindersScreen from './screens/RemindersScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import PediatricianScreen from './screens/PediatricianScreen';
 
 // Types
 import type { Baby, FeedingLog, FruitLog, MealLog, FeedingType, Reminder } from './types';
@@ -46,10 +47,13 @@ import {
   getStoredLogs,
   saveStoredLogs,
   getStoredReminders,
-  saveStoredReminders
+  saveStoredReminders,
+  getStoredPediatricianNotes,
+  saveStoredPediatricianNotes
 } from './config/mockData';
+import { getPediatricianNotes, savePediatricianNotes } from './services/pediatricianService';
 
-type ScreenName = 'login' | 'baby-profile' | 'today' | 'history' | 'reminders' | 'settings' | 'feed-breast' | 'feed-fruit' | 'feed-meal';
+type ScreenName = 'login' | 'baby-profile' | 'today' | 'history' | 'reminders' | 'pediatrician' | 'settings' | 'feed-breast' | 'feed-fruit' | 'feed-meal';
 
 function App() {
   // Authentication states
@@ -64,6 +68,7 @@ function App() {
   // Main Database states
   const [baby, setBaby] = useState<Baby | null>(null);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [pediatricianNotes, setPediatricianNotes] = useState<string>('');
 
   // Navigation states
   const [currentScreen, setCurrentScreen] = useState<ScreenName>('today');
@@ -100,6 +105,7 @@ function App() {
       const storedBaby = getStoredBaby();
       setBaby(storedBaby);
       setReminders(getStoredReminders());
+      setPediatricianNotes(getStoredPediatricianNotes());
 
       // Parse legacy localStorage mock data format into the new types
       const localLogs = getStoredLogs();
@@ -174,6 +180,9 @@ function App() {
     const unsubFruits = subscribeToFruits(uid, (fr) => setFruits(fr));
     const unsubMeals = subscribeToMeals(uid, (m) => setMeals(m));
     const unsubReminders = subscribeToReminders(uid, (r) => setReminders(r));
+
+    // Carrega as anotações do pediatra uma vez no início da sessão do usuário
+    getPediatricianNotes(uid).then(notes => setPediatricianNotes(notes));
 
     return () => {
       unsubBaby();
@@ -632,6 +641,15 @@ function App() {
     }
   };
 
+  const handleSavePediatricianNotes = async (newNotes: string) => {
+    setPediatricianNotes(newNotes);
+    if (uid === 'demo-uid') {
+      saveStoredPediatricianNotes(newNotes);
+    } else if (uid) {
+      await savePediatricianNotes(uid, newNotes);
+    }
+  };
+
   const handleActivatePushNotifications = async () => {
     if (Capacitor.isNativePlatform()) {
       const granted = await requestLocalNotificationPermission();
@@ -723,6 +741,17 @@ function App() {
             onCompleteReminder={handleCompleteReminder}
           />
         );
+      case 'pediatrician':
+        return (
+          <PediatricianScreen
+            baby={baby!}
+            feedings={feedings}
+            fruits={fruits}
+            meals={meals}
+            initialNotes={pediatricianNotes}
+            onSaveNotes={handleSavePediatricianNotes}
+          />
+        );
       case 'settings':
         return (
           <SettingsScreen
@@ -769,6 +798,8 @@ function App() {
         return 'Histórico';
       case 'reminders':
         return 'Lembretes';
+      case 'pediatrician':
+        return 'Relatório do Pediatra';
       case 'settings':
         return 'Configurações';
       case 'feed-breast':
@@ -784,7 +815,7 @@ function App() {
     }
   };
 
-  const showNav = user && baby && ['today', 'history', 'reminders', 'settings'].includes(currentScreen);
+  const showNav = user && baby && ['today', 'history', 'reminders', 'pediatrician', 'settings'].includes(currentScreen);
   const showBack = user && baby && ['feed-breast', 'feed-fruit', 'feed-meal', 'baby-profile'].includes(currentScreen);
 
   const handleBack = showBack ? () => {
