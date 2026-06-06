@@ -1,6 +1,6 @@
-import { Calendar, History, Bell, Settings, ClipboardList } from 'lucide-react';
+import { Calendar, History, Bell, Settings, ClipboardList, TrendingUp } from 'lucide-react';
 
-export type TabName = 'today' | 'history' | 'reminders' | 'pediatrician' | 'settings';
+export type TabName = 'today' | 'history' | 'growth' | 'reminders' | 'pediatrician' | 'settings';
 
 interface BottomNavProps {
   activeTab: TabName;
@@ -20,6 +20,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
       label: 'Histórico',
       icon: History,
       activeColor: 'text-teal-600 bg-teal-50'
+    },
+    {
+      id: 'growth' as TabName,
+      label: 'Crescimento',
+      icon: TrendingUp,
+      activeColor: 'text-amber-600 bg-amber-50'
     },
     {
       id: 'reminders' as TabName,

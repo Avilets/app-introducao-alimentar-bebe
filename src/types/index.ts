@@ -85,3 +85,17 @@ export interface UserProfile {
   displayName?: string;
   babyId?: string;
 }
+
+export interface GrowthRecord {
+  id?: string;
+  babyId: string;
+  date: string; // Formato YYYY-MM-DD
+  ageInDays: number;
+  weightKg: number;
+  lengthCm: number;
+  headCircumferenceCm?: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+

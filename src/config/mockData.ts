@@ -1,4 +1,4 @@
-import type { Reminder, Baby } from '../types';
+import type { Reminder, Baby, GrowthRecord } from '../types';
 
 export interface FeedLog {
   id: string;
@@ -192,9 +192,70 @@ export const saveStoredPediatricianNotes = (notes: string) => {
   localStorage.setItem('rt_ped_notes', notes);
 };
 
+export const MOCK_GROWTH_RECORDS: GrowthRecord[] = [
+  {
+    id: 'gro-1',
+    babyId: 'baby-1',
+    date: '2025-11-12',
+    ageInDays: 0,
+    weightKg: 3.2,
+    lengthCm: 49.0,
+    headCircumferenceCm: 34.0,
+    notes: 'Nascimento da Maya. Saudável e ativa.',
+    createdAt: Date.now() - 3600000 * 24 * 180,
+    updatedAt: Date.now() - 3600000 * 24 * 180
+  },
+  {
+    id: 'gro-2',
+    babyId: 'baby-1',
+    date: '2026-01-12',
+    ageInDays: 61,
+    weightKg: 5.1,
+    lengthCm: 57.0,
+    headCircumferenceCm: 38.0,
+    notes: 'Consulta de 2 meses. Vacinas em dia.',
+    createdAt: Date.now() - 3600000 * 24 * 120,
+    updatedAt: Date.now() - 3600000 * 24 * 120
+  },
+  {
+    id: 'gro-3',
+    babyId: 'baby-1',
+    date: '2026-03-12',
+    ageInDays: 120,
+    weightKg: 6.4,
+    lengthCm: 62.0,
+    headCircumferenceCm: 40.0,
+    notes: 'Consulta de 4 meses. Maya está descobrindo as mãos.',
+    createdAt: Date.now() - 3600000 * 24 * 60,
+    updatedAt: Date.now() - 3600000 * 24 * 60
+  },
+  {
+    id: 'gro-4',
+    babyId: 'baby-1',
+    date: '2026-05-12',
+    ageInDays: 181,
+    weightKg: 7.3,
+    lengthCm: 65.5,
+    headCircumferenceCm: 41.7,
+    notes: 'Consulta de 6 meses. Liberação para introdução alimentar!',
+    createdAt: Date.now() - 3600000 * 24 * 20,
+    updatedAt: Date.now() - 3600000 * 24 * 20
+  }
+];
+
+export const getStoredGrowthRecords = (): GrowthRecord[] => {
+  const data = localStorage.getItem('rt_growth_records');
+  return data ? JSON.parse(data) : MOCK_GROWTH_RECORDS;
+};
+
+export const saveStoredGrowthRecords = (records: GrowthRecord[]) => {
+  localStorage.setItem('rt_growth_records', JSON.stringify(records));
+};
+
 export const resetStoredData = () => {
   localStorage.setItem('rt_baby', JSON.stringify(MOCK_BABY));
   localStorage.setItem('rt_logs', JSON.stringify(MOCK_LOGS));
   localStorage.setItem('rt_reminders', JSON.stringify(MOCK_REMINDERS));
+  localStorage.setItem('rt_growth_records', JSON.stringify(MOCK_GROWTH_RECORDS));
   localStorage.setItem('rt_ped_notes', 'O bebê tem aceitado bem as frutinhas pela manhã. Demonstrar atenção especial com reações a frutas cítricas.');
 };

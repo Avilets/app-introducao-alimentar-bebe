@@ -15,9 +15,10 @@ import HistoryScreen from './screens/HistoryScreen';
 import RemindersScreen from './screens/RemindersScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import PediatricianScreen from './screens/PediatricianScreen';
+import GrowthScreen from './screens/GrowthScreen';
 
 // Types
-import type { Baby, FeedingLog, FruitLog, MealLog, FeedingType, Reminder } from './types';
+import type { Baby, FeedingLog, FruitLog, MealLog, FeedingType, Reminder, GrowthRecord } from './types';
 
 // Firebase Services
 import { subscribeToAuthChanges, logoutUser } from './services/authService';
@@ -32,6 +33,7 @@ import {
   completeReminder,
   toggleReminderActive
 } from './services/reminderService';
+import { subscribeToGrowthRecords, saveGrowthRecord, deleteGrowthRecord } from './services/growthService';
 import { requestFCMToken } from './services/notificationService';
 import { Capacitor } from '@capacitor/core';
 import {
@@ -49,11 +51,13 @@ import {
   getStoredReminders,
   saveStoredReminders,
   getStoredPediatricianNotes,
-  saveStoredPediatricianNotes
+  saveStoredPediatricianNotes,
+  getStoredGrowthRecords,
+  saveStoredGrowthRecords
 } from './config/mockData';
 import { getPediatricianNotes, savePediatricianNotes } from './services/pediatricianService';
 
-type ScreenName = 'login' | 'baby-profile' | 'today' | 'history' | 'reminders' | 'pediatrician' | 'settings' | 'feed-breast' | 'feed-fruit' | 'feed-meal';
+type ScreenName = 'login' | 'baby-profile' | 'today' | 'history' | 'growth' | 'reminders' | 'pediatrician' | 'settings' | 'feed-breast' | 'feed-fruit' | 'feed-meal';
 
 function App() {
   // Authentication states
@@ -64,6 +68,7 @@ function App() {
   const [feedings, setFeedings] = useState<FeedingLog[]>([]);
   const [fruits, setFruits] = useState<FruitLog[]>([]);
   const [meals, setMeals] = useState<MealLog[]>([]);
+  const [growthRecords, setGrowthRecords] = useState<GrowthRecord[]>([]);
 
   // Main Database states
   const [baby, setBaby] = useState<Baby | null>(null);
@@ -156,6 +161,7 @@ function App() {
       setFeedings(localFeedings);
       setFruits(localFruits);
       setMeals(localMeals);
+      setGrowthRecords(getStoredGrowthRecords());
       
       if (!storedBaby) {
         setCurrentScreen((prev) => prev !== 'baby-profile' ? 'baby-profile' : prev);
@@ -180,6 +186,7 @@ function App() {
     const unsubFruits = subscribeToFruits(uid, (fr) => setFruits(fr));
     const unsubMeals = subscribeToMeals(uid, (m) => setMeals(m));
     const unsubReminders = subscribeToReminders(uid, (r) => setReminders(r));
+    const unsubGrowth = subscribeToGrowthRecords(uid, (g) => setGrowthRecords(g));
 
     // Carrega as anotações do pediatra uma vez no início da sessão do usuário
     getPediatricianNotes(uid).then(notes => setPediatricianNotes(notes));
@@ -190,6 +197,7 @@ function App() {
       unsubFruits();
       unsubMeals();
       unsubReminders();
+      unsubGrowth();
     };
   }, [uid]);
 
@@ -407,6 +415,52 @@ function App() {
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar refeição no Firestore: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+  };
+
+  const handleSaveGrowthRecord = async (details: Omit<GrowthRecord, 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    const recordData = {
+      ...details,
+      babyId: baby?.id || details.babyId || 'baby-1'
+    };
+
+    if (uid === 'demo-uid') {
+      const newRecord: GrowthRecord = {
+        id: recordData.id || `gro-${Date.now()}`,
+        ...recordData,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      let updated: GrowthRecord[];
+      if (recordData.id) {
+        updated = growthRecords.map(r => r.id === recordData.id ? newRecord : r);
+      } else {
+        updated = [newRecord, ...growthRecords];
+      }
+      setGrowthRecords(updated);
+      saveStoredGrowthRecords(updated);
+    } else if (uid) {
+      try {
+        await saveGrowthRecord(uid, recordData);
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao salvar registro de crescimento no Firestore: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+  };
+
+  const handleDeleteGrowthRecord = async (id: string) => {
+    if (uid === 'demo-uid') {
+      const updated = growthRecords.filter(r => r.id !== id);
+      setGrowthRecords(updated);
+      saveStoredGrowthRecords(updated);
+    } else if (uid) {
+      try {
+        await deleteGrowthRecord(uid, id);
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao excluir registro de crescimento no Firestore.');
       }
     }
   };
@@ -702,9 +756,10 @@ function App() {
             feedings={feedings}
             fruits={fruits}
             meals={meals}
+            growthRecords={growthRecords}
             reminders={reminders}
             onNavigate={(screen) => {
-              setPreviousTab('today');
+              setPreviousTab(currentScreen === 'today' ? 'today' : currentScreen);
               setCurrentScreen(screen as ScreenName);
             }}
             onAddWaterLog={handleAddWater}
@@ -729,6 +784,15 @@ function App() {
             fruits={fruits}
             meals={meals}
             onDeleteLog={handleDeleteLog}
+          />
+        );
+      case 'growth':
+        return (
+          <GrowthScreen
+            baby={baby!}
+            growthRecords={growthRecords}
+            onSaveRecord={handleSaveGrowthRecord}
+            onDeleteRecord={handleDeleteGrowthRecord}
           />
         );
       case 'reminders':
@@ -796,6 +860,8 @@ function App() {
         return 'Baby Grow';
       case 'history':
         return 'Histórico';
+      case 'growth':
+        return 'Crescimento';
       case 'reminders':
         return 'Lembretes';
       case 'pediatrician':
@@ -815,7 +881,7 @@ function App() {
     }
   };
 
-  const showNav = user && baby && ['today', 'history', 'reminders', 'pediatrician', 'settings'].includes(currentScreen);
+  const showNav = user && baby && ['today', 'history', 'growth', 'reminders', 'pediatrician', 'settings'].includes(currentScreen);
   const showBack = user && baby && ['feed-breast', 'feed-fruit', 'feed-meal', 'baby-profile'].includes(currentScreen);
 
   const handleBack = showBack ? () => {

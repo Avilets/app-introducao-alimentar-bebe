@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import type { Baby, FeedingLog, FruitLog, MealLog, Reminder } from '../types';
-import { Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, Power } from 'lucide-react';
+import type { Baby, FeedingLog, FruitLog, MealLog, Reminder, GrowthRecord } from '../types';
+import { Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, Power, TrendingUp, Scale, Ruler } from 'lucide-react';
 import { getTodaySummary, isToday } from '../services/summaryService';
+import { calculatePercentile } from '../data/growthPercentiles';
 
 interface TodayScreenProps {
   baby: Baby;
   feedings: FeedingLog[];
   fruits: FruitLog[];
   meals: MealLog[];
+  growthRecords: GrowthRecord[];
   reminders: Reminder[];
   onNavigate: (screen: string) => void;
   onAddWaterLog: (ml: number) => void;
@@ -21,6 +23,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   feedings,
   fruits,
   meals,
+  growthRecords,
   reminders,
   onNavigate,
   onAddWaterLog,
@@ -30,6 +33,40 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
 }) => {
   const [waterAmount, setWaterAmount] = useState(50);
   const [showWaterSuccess, setShowWaterSuccess] = useState(false);
+
+  // Helper: Calculate baby's age at a specific past date
+  const calculateAgeAtDate = (birthDateStr: string, targetDateStr: string) => {
+    if (!birthDateStr || !targetDateStr) return '';
+    const birthDate = new Date(birthDateStr);
+    const targetDate = new Date(targetDateStr);
+    
+    let years = targetDate.getFullYear() - birthDate.getFullYear();
+    let months = targetDate.getMonth() - birthDate.getMonth();
+    let days = targetDate.getDate() - birthDate.getDate();
+
+    if (days < 0) {
+      months -= 1;
+      const prevMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    const totalMonths = years * 12 + months;
+
+    if (totalMonths === 0) {
+      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    }
+    
+    if (days === 0) {
+      return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
+    }
+    
+    return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'} e ${days} ${days === 1 ? 'dia' : 'dias'}`;
+  };
 
   // Helper: Calculate baby's age in months and days
   const calculateAge = (birthDateStr: string) => {
@@ -260,6 +297,113 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Growth Tracking Summary Card */}
+      {(() => {
+        const sortedGrowth = growthRecords && growthRecords.length > 0
+          ? [...growthRecords].sort((a, b) => b.date.localeCompare(a.date))
+          : [];
+        const latestGrowthRecord = sortedGrowth.length > 0 ? sortedGrowth[0] : null;
+        const prevGrowthRecord = sortedGrowth.length > 1 ? sortedGrowth[1] : undefined;
+
+        if (latestGrowthRecord) {
+          const ageText = calculateAgeAtDate(baby.birthDate, latestGrowthRecord.date);
+          const pWeight = calculatePercentile(baby.gender, 'weight', latestGrowthRecord.ageInDays, latestGrowthRecord.weightKg);
+          const pLength = calculatePercentile(baby.gender, 'length', latestGrowthRecord.ageInDays, latestGrowthRecord.lengthCm);
+
+          let weightDiffText = '';
+          let lengthDiffText = '';
+          if (prevGrowthRecord) {
+            const wDiff = latestGrowthRecord.weightKg - prevGrowthRecord.weightKg;
+            const lDiff = latestGrowthRecord.lengthCm - prevGrowthRecord.lengthCm;
+            weightDiffText = wDiff >= 0 ? `+${wDiff.toFixed(2)} kg` : `${wDiff.toFixed(2)} kg`;
+            lengthDiffText = lDiff >= 0 ? `+${lDiff.toFixed(1)} cm` : `${lDiff.toFixed(1)} cm`;
+          }
+
+          return (
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-orange-500" />
+                  Acompanhamento de Crescimento
+                </h3>
+                <button
+                  onClick={() => onNavigate('growth')}
+                  className="text-[10px] text-orange-500 font-extrabold hover:underline cursor-pointer"
+                >
+                  Ver Gráficos
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Weight Card */}
+                <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    <Scale className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-bold block leading-none">Peso</span>
+                    <span className="text-sm font-black text-slate-800 mt-1 block leading-none">
+                      {latestGrowthRecord.weightKg} kg
+                    </span>
+                    <span className="text-[8px] text-orange-600 font-bold mt-1 block leading-none">
+                      Percentil: {pWeight.percentileText}
+                    </span>
+                    {weightDiffText && (
+                      <span className="text-[8px] text-slate-400 block mt-0.5 leading-none">
+                        Variação: {weightDiffText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Length Card */}
+                <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                    <Ruler className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-bold block leading-none">Comprimento</span>
+                    <span className="text-sm font-black text-slate-800 mt-1 block leading-none">
+                      {latestGrowthRecord.lengthCm} cm
+                    </span>
+                    <span className="text-[8px] text-blue-600 font-bold mt-1 block leading-none">
+                      Percentil: {pLength.percentileText}
+                    </span>
+                    {lengthDiffText && (
+                      <span className="text-[8px] text-slate-400 block mt-0.5 leading-none">
+                        Variação: {lengthDiffText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[9px] text-slate-400 font-medium text-center leading-none">
+                Última medição em {latestGrowthRecord.date.split('-').reverse().join('/')} (com {ageText})
+              </p>
+            </div>
+          );
+        } else {
+          return (
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center space-y-3">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center justify-center gap-1.5 leading-none">
+                <TrendingUp className="w-4 h-4 text-orange-500" />
+                Crescimento do Bebê
+              </h3>
+              <p className="text-xs text-slate-400 max-w-[240px] mx-auto leading-relaxed">
+                Acompanhe o peso e altura do bebê comparando com a curva de referência da OMS.
+              </p>
+              <button
+                onClick={() => onNavigate('growth')}
+                className="py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl text-xs active:scale-95 transition-all shadow-md shadow-orange-100 cursor-pointer inline-block"
+              >
+                Registrar Primeira Medida
+              </button>
+            </div>
+          );
+        }
+      })()}
 
       {/* Quick register buttons */}
       <div>
