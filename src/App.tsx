@@ -152,6 +152,9 @@ function App() {
   // Navigation states
   const [currentScreen, setCurrentScreen] = useState<ScreenName>('today');
   const [previousTab, setPreviousTab] = useState<ScreenName>('today');
+  const [screenHistory, setScreenHistory] = useState<ScreenName[]>([]);
+  const isNavigatingBackRef = useRef(false);
+  const prevScreenRef = useRef<ScreenName>('login');
 
   // State to hold feeding log currently being edited
   const [editingFeeding, setEditingFeeding] = useState<FeedingLog | null>(null);
@@ -479,41 +482,62 @@ function App() {
     };
   }, [uid]);
 
+  // 4.5. Monitorar histórico de navegação para botões de voltar (hardware e app)
+  useEffect(() => {
+    const prevScreen = prevScreenRef.current;
+    prevScreenRef.current = currentScreen;
+
+    if (isNavigatingBackRef.current) {
+      isNavigatingBackRef.current = false;
+      return;
+    }
+
+    if (currentScreen === prevScreen) return;
+
+    // Se navegar para a home ('today') ou 'login', limpamos o histórico para reiniciar o fluxo
+    if (currentScreen === 'today' || currentScreen === 'login') {
+      setScreenHistory([]);
+      return;
+    }
+
+    // Adiciona o prevScreen ao histórico
+    setScreenHistory(prev => {
+      // Evita duplicatas consecutivas no histórico
+      if (prev.length > 0 && prev[prev.length - 1] === prevScreen) {
+        return prev;
+      }
+      return [...prev, prevScreen];
+    });
+  }, [currentScreen]);
+
   // 5. Configurar ouvinte do botão Voltar físico do Android (Capacitor)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
     const handleHardwareBack = () => {
-      // Telas raiz que devem sair do app
-      if (currentScreen === 'today' || currentScreen === 'login') {
-        return true;
-      }
-
-      // Se estiver no cadastro inicial do bebê e não tiver bebê cadastrado ainda
+      // Se estiver no cadastro inicial do bebê e não tiver bebê cadastrado ainda, sai do app
       if (currentScreen === 'baby-profile' && !baby) {
         return true;
       }
 
-      // Formulários / Telas de Registro
-      if (['feed-breast', 'feed-fruit', 'feed-meal', 'sleep', 'diapers', 'medications'].includes(currentScreen)) {
-        setCurrentScreen(previousTab || 'today');
-        return false;
+      // Se houver histórico de navegação, volta para a tela anterior
+      if (screenHistory.length > 0) {
+        isNavigatingBackRef.current = true;
+        const nextHistory = [...screenHistory];
+        const targetScreen = nextHistory.pop()!;
+        setScreenHistory(nextHistory);
+        setCurrentScreen(targetScreen);
+        return false; // Não sai do app
       }
 
-      // Telas de configuração / suporte
-      if (['family-sharing', 'privacy-policy', 'terms-of-use', 'data-saved', 'important-info'].includes(currentScreen)) {
-        setCurrentScreen('settings');
-        return false;
-      }
-
-      // Abas secundárias do menu inferior / More
-      if (['history', 'growth', 'vaccines', 'reminders', 'pediatrician', 'settings', 'more'].includes(currentScreen)) {
+      // Se não houver histórico e não estivermos na home, volta para a home ('today')
+      if (currentScreen !== 'today' && currentScreen !== 'login') {
         setCurrentScreen('today');
-        return false;
+        return false; // Não sai do app
       }
 
-      setCurrentScreen('today');
-      return false;
+      // Se já estivermos na home ('today') ou na tela de 'login', sai do app
+      return true;
     };
 
     let backButtonListener: any = null;
@@ -538,7 +562,7 @@ function App() {
         backButtonListener.remove();
       }
     };
-  }, [currentScreen, previousTab, baby]);
+  }, [currentScreen, screenHistory, baby]);
 
   // Auth Handlers
   const handleLoginSuccess = (email: string) => {
