@@ -57,25 +57,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     <div className="flex-1 flex flex-col justify-between px-6 py-8">
       {/* Brand Header */}
       <div className="flex-1 flex flex-col items-center justify-center my-6">
-        {/* Cute Icon container */}
-        <div className="w-24 h-24 rounded-full bg-orange-100 flex items-center justify-center shadow-inner mb-4 relative animate-pulse">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-14 h-14">
-            <path d="M140 280h232c0 60-48 108-116 108s-116-48-116-108z" fill="#f97316"/>
-            <rect x="120" y="260" width="272" height="20" rx="10" fill="#ea580c"/>
-            <path d="M256 300c-3-5-10-5-13 0l-1 2c-3 3-2 8 1 11l13 11 13-11c3-3 4-8 1-11l-1-2z" fill="#ffffff"/>
-            <circle cx="210" cy="325" r="6" fill="#ffffff"/>
-            <circle cx="302" cy="325" r="6" fill="#ffffff"/>
-          </svg>
-          <div className="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-1.5 shadow">
-            <Sparkles className="w-4 h-4" />
-          </div>
+        {/* Cute Logo container */}
+        <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-md mb-4">
+          <img src="/favicon.png" alt="Baby Grow Logo" className="w-full h-full object-cover" />
         </div>
 
         <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight text-center">
-          Rotina Alimentar Bebê
+          Baby Grow
         </h2>
         <p className="text-sm text-slate-400 mt-2 text-center max-w-xs">
-          Acompanhe mamadas, frutinhas e refeições do seu bebê com facilidade e amor.
+          Acompanhe mamadas, frutinhas, refeições e o crescimento saudável do seu bebê.
         </p>
       </div>
 

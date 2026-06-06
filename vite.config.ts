@@ -9,29 +9,35 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+      VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
-        name: 'Rotina Alimentar Bebê',
-        short_name: 'Rotina Bebê',
-        description: 'Aplicativo para acompanhamento da rotina alimentar do bebê',
-        theme_color: '#fff8f2', // Soft warm pastel color
-        background_color: '#ffffff',
+        name: 'Baby Grow',
+        short_name: 'Baby Grow',
+        description: 'Acompanhamento de alimentação e desenvolvimento do bebê',
+        theme_color: '#FFF8F0',
+        background_color: '#FFF8F0',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './index.html',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: '192x192 512x512',
-            type: 'image/svg+xml',
+            src: 'icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'favicon.svg',
-            sizes: '192x192 512x512',
-            type: 'image/svg+xml',
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'favicon.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable'
           }
         ]

@@ -793,7 +793,7 @@ function App() {
   const getHeaderTitle = () => {
     switch (currentScreen) {
       case 'today':
-        return 'Rotina Alimentar Bebê';
+        return 'Baby Grow';
       case 'history':
         return 'Histórico';
       case 'reminders':
@@ -811,7 +811,7 @@ function App() {
       case 'baby-profile':
         return baby ? 'Editar Bebê' : 'Cadastrar Bebê';
       default:
-        return 'Rotina Alimentar Bebê';
+        return 'Baby Grow';
     }
   };
 

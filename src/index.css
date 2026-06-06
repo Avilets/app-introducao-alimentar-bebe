@@ -15,13 +15,19 @@
   --color-baby-mint: #f0fdf4;
   --color-baby-mint-dark: #bbf7d0;
   
-  --color-brand-primary: #f97316;
+  /* Redefining orange color scale for brand consistency */
+  --color-orange-400: #ff9a3b;
+  --color-orange-500: #FF7A00;
+  --color-orange-600: #e66e00;
+  --color-orange-700: #cc6200;
+  
+  --color-brand-primary: #FF7A00;
   --color-brand-secondary: #0d9488;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #fcfbfa;
+  background-color: #FFF8F0;
   color: #374151;
   margin: 0;
   padding: 0;

@@ -15,6 +15,21 @@ interface FeedFruitScreenProps {
   onCancel: () => void;
 }
 
+const FRUIT_VARIETIES: { [key: string]: string[] } = {
+  'Banana': ['Prata', 'Nanica', 'Maçã', 'Terra', 'Ouro'],
+  'Maçã': ['Gala', 'Fuji', 'Verde', 'Nacional'],
+  'Pera': ['Williams', 'Portuguesa', 'D\'anjou', 'Pera-mel'],
+  'Mamão': ['Papaia', 'Formosa'],
+  'Abacate': ['Manteiga', 'Avocado', 'Geada'],
+  'Manga': ['Palmer', 'Rosa', 'Espada', 'Tommy'],
+  'Melancia': ['Comum', 'Baby'],
+  'Melão': ['Amarelo', 'Pele de Sapo', 'Cantaloupe'],
+  'Laranja': ['Lima', 'Pêra', 'Seleta', 'Bahia'],
+  'Ameixa': ['Vermelha', 'Preta', 'Seca'],
+  'Pêssego': ['Nacional', 'Importado'],
+  'Kiwi': ['Verde', 'Amarelo (Gold)']
+};
+
 export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
   onSave,
   onCancel
@@ -31,6 +46,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
 
   const [fruitName, setFruitName] = useState<string>('');
   const [fruitType, setFruitType] = useState<string>('');
+  const [isCustomVariety, setIsCustomVariety] = useState<boolean>(false);
   const [datetime, setDatetime] = useState(getCurrentLocalDatetime());
   const [quantity, setQuantity] = useState<QuantityScale>('bem');
   const [reaction, setReaction] = useState<ReactionType>('aceitou');
@@ -84,7 +100,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
     <div className="flex-1 flex flex-col justify-between p-6">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center mx-auto mb-2">
+          <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mx-auto mb-2">
             <Apple className="w-8 h-8" />
           </div>
           <p className="text-sm text-slate-400">Registre a fruta oferecida e veja os benefícios educativos.</p>
@@ -103,8 +119,13 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
           </label>
           <select
             value={fruitName}
-            onChange={(e) => { setFruitName(e.target.value); setError(''); }}
-            className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-pink-300 text-sm font-semibold text-slate-700"
+            onChange={(e) => {
+              setFruitName(e.target.value);
+              setFruitType('');
+              setIsCustomVariety(false);
+              setError('');
+            }}
+            className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-orange-300 text-sm font-semibold text-slate-700"
           >
             <option value="">-- Escolha uma Fruta --</option>
             {FRUITS_DATABASE.map(f => (
@@ -114,23 +135,57 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
         </div>
 
         {/* Tipo / Variedade da Fruta (Opcional) */}
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Tipo / Variedade (Opcional)
-          </label>
-          <input
-            type="text"
-            placeholder="Ex: Lima, Nanica, Gala, Manteiga..."
-            value={fruitType}
-            onChange={(e) => setFruitType(e.target.value)}
-            className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-pink-300 text-sm font-semibold text-slate-700"
-          />
-        </div>
+        {fruitName && (
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+              Tipo / Variedade (Opcional)
+            </label>
+            
+            <div className="space-y-3">
+              {FRUIT_VARIETIES[fruitName] && (
+                <select
+                  value={isCustomVariety ? 'custom' : fruitType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'custom') {
+                      setIsCustomVariety(true);
+                      setFruitType('');
+                    } else {
+                      setIsCustomVariety(false);
+                      setFruitType(val);
+                    }
+                  }}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-orange-300 text-sm font-semibold text-slate-700 cursor-pointer"
+                >
+                  <option value="">-- Selecione a variedade (Opcional) --</option>
+                  {FRUIT_VARIETIES[fruitName].map((varOption) => (
+                    <option key={varOption} value={varOption}>
+                      {varOption}
+                    </option>
+                  ))}
+                  <option value="custom">Outra (Digitar...) ✍️</option>
+                </select>
+              )}
+
+              {/* Input de texto livre para tipo/variedade se selecionou custom ou a fruta não tem lista cadastrada */}
+              {(!FRUIT_VARIETIES[fruitName] || isCustomVariety) && (
+                <input
+                  type="text"
+                  placeholder="Digite a variedade... Ex: Lima, Nanica, Gala..."
+                  value={fruitType}
+                  onChange={(e) => setFruitType(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-orange-300 text-sm font-semibold text-slate-700"
+                  autoFocus={isCustomVariety}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Informações Educativas da Fruta Selecionada */}
         {selectedFruitInfo && (
-          <div className="bg-gradient-to-r from-pink-50 to-amber-50 rounded-3xl p-4 border border-pink-100/50 space-y-3 shadow-inner">
-            <div className="flex items-center gap-2 text-pink-700">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-3xl p-4 border border-orange-100/50 space-y-3 shadow-inner">
+            <div className="flex items-center gap-2 text-orange-700">
               <BookOpen className="w-4 h-4" />
               <h4 className="text-xs font-black uppercase tracking-wider">Benefícios da {selectedFruitInfo.name}</h4>
             </div>
@@ -160,7 +215,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
               type="datetime-local"
               value={datetime}
               onChange={(e) => setDatetime(e.target.value)}
-              className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-pink-300 text-sm font-semibold text-slate-700"
+              className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-orange-300 text-sm font-semibold text-slate-700"
               required
             />
             <Calendar className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -180,7 +235,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
                 onClick={() => setQuantity(q.value)}
                 className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   quantity === q.value
-                    ? 'border-pink-400 bg-pink-500 text-white shadow-sm'
+                    ? 'border-orange-400 bg-orange-500 text-white shadow-sm'
                     : 'border-slate-100 bg-slate-50 text-slate-500'
                 }`}
               >
@@ -203,7 +258,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
                 onClick={() => setReaction(r.value)}
                 className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 active:scale-95 transition-all cursor-pointer ${
                   reaction === r.value
-                    ? 'border-pink-400 bg-pink-50 text-pink-700 font-bold'
+                    ? 'border-orange-400 bg-orange-50 text-orange-700 font-bold'
                     : 'border-slate-100 bg-slate-50 text-slate-400'
                 }`}
               >
@@ -224,7 +279,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
             placeholder="Ex: Pegou a fruta com a mão, comeu a maior parte..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-pink-300 text-sm"
+            className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-orange-300 text-sm"
           />
         </div>
 
@@ -241,7 +296,7 @@ export const FeedFruitScreen: React.FC<FeedFruitScreenProps> = ({
           
           <button
             type="submit"
-            className="py-3.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md shadow-pink-100 text-sm cursor-pointer"
+            className="py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md shadow-orange-100 text-sm cursor-pointer"
           >
             <Save className="w-4 h-4" />
             Salvar
