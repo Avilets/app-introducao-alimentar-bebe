@@ -5,7 +5,7 @@ import type {
 } from '../types';
 import { 
   Milk, Apple, Utensils, Droplet, Check, Trash2, Clock, 
-  TrendingUp, Moon, Pill, Pencil 
+  Moon, Pill, Pencil 
 } from 'lucide-react';
 import { getTodaySummary, isToday } from '../services/summaryService';
 import { getActiveSleepRecord, calculateHoursSleptToday } from '../services/sleepService';
@@ -33,7 +33,6 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   feedings,
   fruits,
   meals,
-  growthRecords,
   reminders,
   sleepRecords = [],
   diaperRecords = [],
@@ -47,6 +46,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
 }) => {
   const [waterAmount, setWaterAmount] = useState(50);
   const [showWaterSuccess, setShowWaterSuccess] = useState(false);
+  const [showWaterInput, setShowWaterInput] = useState(false);
 
   const calculateAge = (birthDateStr: string) => {
     if (!birthDateStr) return '';
@@ -129,7 +129,10 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   const handleQuickWater = () => {
     onAddWaterLog(waterAmount);
     setShowWaterSuccess(true);
-    setTimeout(() => setShowWaterSuccess(false), 2000);
+    setTimeout(() => {
+      setShowWaterSuccess(false);
+      setShowWaterInput(false);
+    }, 2000);
   };
 
   const getFormatTime = (datetimeStr: string) => {
@@ -167,46 +170,50 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
         </div>
       )}
 
-      {(reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ||
-        reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0) && (
-        <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-3">
-          <h3 className="text-sm font-bold text-slate-800 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">⏰ Lembretes</span>
-            {userRole !== 'leitura' && (
-              <button onClick={() => onNavigate('reminders')} className="text-xs text-pink-500 font-bold hover:underline">Configurar</button>
-            )}
-          </h3>
-          {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ? (
-            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
-              <span className="text-rose-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> Pendente!
-              </span>
-              {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).slice(0, 1).map(r => (
-                <div key={r.id} className="mt-2 flex items-center justify-between gap-2 bg-white/70 border border-rose-200/50 p-2.5 rounded-xl">
-                  <span className="text-xs font-bold truncate">{r.title}</span>
-                  <button
-                    onClick={() => {
-                      if (userRole === 'leitura') return;
-                      onCompleteReminder(r);
-                    }}
-                    disabled={userRole === 'leitura'}
-                    className={`p-1.5 rounded-lg active:scale-90 ${userRole === 'leitura' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-rose-500 text-white'}`}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0 && (
-              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <span className="text-indigo-600 text-[9px] font-bold uppercase tracking-wider">Próxima Atividade</span>
-                  <h4 className="text-xs font-bold text-slate-800">{reminders.filter(r => r.active && r.nextTriggerAt > Date.now())[0].title}</h4>
-                </div>
-                <Clock className="w-5 h-5 text-indigo-600" />
+      {userRole !== 'leitura' && (
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3">Registrar Atividades</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <button onClick={() => onNavigate('feed-breast')} className="p-4 rounded-3xl bg-amber-50 flex flex-col items-center gap-2 font-bold transition-transform active:scale-95"><Milk className="text-amber-500" /><span className="text-xs">Mamada</span></button>
+            <button onClick={() => onNavigate('feed-meal')} className="p-4 rounded-3xl bg-teal-50 flex flex-col items-center gap-2 font-bold transition-transform active:scale-95"><Utensils className="text-teal-600" /><span className="text-xs">Refeição</span></button>
+            <button onClick={() => onNavigate('feed-fruit')} className="p-4 rounded-3xl bg-pink-50 flex flex-col items-center gap-2 font-bold transition-transform active:scale-95"><Apple className="text-pink-600" /><span className="text-xs">Fruta</span></button>
+            <button onClick={() => onNavigate('sleep')} className="p-4 rounded-3xl bg-indigo-50 flex flex-col items-center gap-2 font-bold transition-transform active:scale-95"><Moon className="text-indigo-900" /><span className="text-xs">Sono</span></button>
+            <button onClick={() => onNavigate('diapers')} className="p-4 rounded-3xl bg-blue-50 flex flex-col items-center gap-2 font-bold transition-transform active:scale-95"><Droplet className="text-blue-500" /><span className="text-xs">Fralda</span></button>
+            <button onClick={() => setShowWaterInput(prev => !prev)} className={`p-4 rounded-3xl flex flex-col items-center gap-2 font-bold transition-all active:scale-95 ${showWaterInput ? 'bg-sky-200 border-sky-400 text-sky-950 shadow-sm' : 'bg-sky-50 text-sky-700'}`}><Droplet className="text-sky-500" /><span className="text-xs">Água</span></button>
+          </div>
+          
+          {showWaterInput && (
+            <div className="bg-sky-50/70 border border-sky-100 rounded-3xl p-5 mt-3 transition-all animate-fadeIn">
+              <div className="flex items-center gap-2 mb-3">
+                <Droplet className="w-4 h-4 text-sky-600" />
+                <h3 className="text-sm font-bold text-sky-950">Registrar Água</h3>
               </div>
-            )
+              <div className="flex items-center gap-3">
+                <div className="flex-1 grid grid-cols-3 gap-2">
+                  {[30, 50, 100].map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setWaterAmount(amt)}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                        waterAmount === amt ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-sky-800 border border-sky-200/50 hover:bg-sky-100/50'
+                      }`}
+                    >
+                      {amt}ml
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleQuickWater}
+                  className={`py-3 px-4 rounded-2xl text-xs font-bold text-white transition-all active:scale-95 ${
+                    showWaterSuccess ? 'bg-emerald-500' : 'bg-sky-600 hover:bg-sky-700 shadow-sm'
+                  }`}
+                >
+                  {showWaterSuccess ? 'Salvo!' : 'Adicionar'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -266,50 +273,47 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
         )}
       </div>
 
-      {(() => {
-        const sortedGrowth = growthRecords && growthRecords.length > 0 ? [...growthRecords].sort((a, b) => b.date.localeCompare(a.date)) : [];
-        const latestGrowthRecord = sortedGrowth[0];
-
-        if (latestGrowthRecord) {
-          return (
-            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-[#FF7A00]" /> Crescimento</h3>
-                <button onClick={() => onNavigate('growth')} className="text-[10px] text-[#FF7A00] font-extrabold hover:underline">Ver Gráficos</button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-50 rounded-2xl p-3"><span className="text-[9px] text-slate-400 font-bold">Peso</span><p className="text-sm font-black">{latestGrowthRecord.weightKg} kg</p></div>
-                <div className="bg-slate-50 rounded-2xl p-3"><span className="text-[9px] text-slate-400 font-bold">Comprimento</span><p className="text-sm font-black">{latestGrowthRecord.lengthCm} cm</p></div>
-              </div>
+      {(reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ||
+        reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0) && (
+        <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">⏰ Lembretes</span>
+            {userRole !== 'leitura' && (
+              <button onClick={() => onNavigate('reminders')} className="text-xs text-pink-500 font-bold hover:underline">Configurar</button>
+            )}
+          </h3>
+          {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).length > 0 ? (
+            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
+              <span className="text-rose-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> Pendente!
+              </span>
+              {reminders.filter(r => r.active && r.nextTriggerAt > 0 && r.nextTriggerAt <= Date.now()).slice(0, 1).map(r => (
+                <div key={r.id} className="mt-2 flex items-center justify-between gap-2 bg-white/70 border border-rose-200/50 p-2.5 rounded-xl">
+                  <span className="text-xs font-bold truncate">{r.title}</span>
+                  <button
+                    onClick={() => {
+                      if (userRole === 'leitura') return;
+                      onCompleteReminder(r);
+                    }}
+                    disabled={userRole === 'leitura'}
+                    className={`p-1.5 rounded-lg active:scale-90 ${userRole === 'leitura' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-rose-500 text-white'}`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>
-          );
-        }
-        return (
-          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center">
-            <h3 className="text-sm font-bold text-slate-800">Crescimento do Bebê</h3>
-            <button onClick={() => onNavigate('growth')} className="mt-3 py-2 px-4 bg-[#FF7A00] text-white font-bold rounded-2xl text-xs">Registrar Medida</button>
-          </div>
-        );
-      })()}
-
-      {userRole !== 'leitura' && (
-        <div>
-          <h3 className="text-sm font-bold text-slate-800 mb-3">Registrar Atividades</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <button onClick={() => onNavigate('feed-breast')} className="p-4 rounded-3xl bg-amber-50 flex flex-col items-center gap-2 font-bold"><Milk className="text-amber-500" /><span className="text-xs">Mamada</span></button>
-            <button onClick={() => onNavigate('sleep')} className="p-4 rounded-3xl bg-indigo-50 flex flex-col items-center gap-2 font-bold"><Moon className="text-indigo-900" /><span className="text-xs">Sono</span></button>
-            <button onClick={() => onNavigate('diapers')} className="p-4 rounded-3xl bg-blue-50 flex flex-col items-center gap-2 font-bold"><Droplet className="text-blue-500" /><span className="text-xs">Fralda</span></button>
-          </div>
-        </div>
-      )}
-
-      {userRole !== 'leitura' && (
-        <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-5">
-          <div className="flex items-center gap-2 mb-3"><Droplet className="w-4 h-4" /><h3 className="text-sm font-bold">Registrar Água</h3></div>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 grid grid-cols-3 gap-2">{[30, 50, 100].map(amt => <button key={amt} onClick={() => setWaterAmount(amt)} className={`py-2 rounded-xl text-xs font-bold ${waterAmount === amt ? 'bg-blue-500 text-white' : 'bg-white'}`}>{amt}ml</button>)}</div>
-            <button onClick={handleQuickWater} className={`py-3 px-4 rounded-2xl text-xs text-white ${showWaterSuccess ? 'bg-emerald-500' : 'bg-blue-600'}`}>{showWaterSuccess ? 'Salvo!' : 'Adicionar'}</button>
-          </div>
+          ) : (
+            reminders.filter(r => r.active && r.nextTriggerAt > Date.now()).length > 0 && (
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-indigo-600 text-[9px] font-bold uppercase tracking-wider">Próxima Atividade</span>
+                  <h4 className="text-xs font-bold text-slate-800">{reminders.filter(r => r.active && r.nextTriggerAt > Date.now())[0].title}</h4>
+                </div>
+                <Clock className="w-5 h-5 text-indigo-600" />
+              </div>
+            )
+          )}
         </div>
       )}
 

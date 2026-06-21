@@ -48,6 +48,18 @@ function calculateNextTrigger(reminder, now) {
   }
 
   if (reminder.mode === 'fixed' && reminder.fixedTime) {
+    // Para evitar deslocamentos de fuso horário causados pelo servidor rodando em UTC,
+    // se já existir um trigger time no banco, somamos períodos de 24 horas a ele.
+    const prevTrigger = reminder.nextTriggerAt || reminder.nextDueAt || 0;
+    if (prevTrigger > 0) {
+      let nextTrigger = prevTrigger;
+      while (nextTrigger <= now) {
+        nextTrigger += 24 * 60 * 60 * 1000;
+      }
+      return nextTrigger;
+    }
+
+    // Fallback: cálculo baseado no horário atual da máquina (caso não tenha trigger anterior)
     const [hoursStr, minutesStr] = reminder.fixedTime.split(':');
     const hours = parseInt(hoursStr, 10);
     const minutes = parseInt(minutesStr, 10);
@@ -64,6 +76,7 @@ function calculateNextTrigger(reminder, now) {
 
   return now + 60 * 60 * 1000;
 }
+
 
 // 3. Execução Principal do Processo de Disparo
 async function run() {

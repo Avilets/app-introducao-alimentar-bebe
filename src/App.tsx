@@ -421,11 +421,87 @@ function App() {
         }
       });
     }, 10000); // Executa a cada 10 segundos
-
     return () => clearInterval(checkInterval);
   }, [reminders]);
 
+  // 3.2. Auto-avançar lembretes expirados que estão no passado (executa no carregamento e a cada 30 segundos)
+  useEffect(() => {
+    if (userRole === 'leitura') return;
+
+    const checkAndAdvance = async () => {
+      const now = Date.now();
+      let hasChanges = false;
+      
+      const updatedReminders = reminders.map((reminder) => {
+        if (
+          reminder.active &&
+          reminder.nextTriggerAt > 0 &&
+          reminder.nextTriggerAt <= now
+        ) {
+          let nextTrigger = reminder.nextTriggerAt;
+          let active: boolean = reminder.active;
+
+          if (reminder.mode === 'timer') {
+            const interval = (reminder.intervalMinutes || 120) * 60 * 1000;
+            while (nextTrigger <= now) {
+              nextTrigger += interval;
+            }
+          } else { // fixed
+            if (reminder.repeatDaily) {
+              const interval = 24 * 60 * 60 * 1000;
+              while (nextTrigger <= now) {
+                nextTrigger += interval;
+              }
+            } else {
+              active = false;
+              nextTrigger = 0;
+            }
+          }
+
+          if (nextTrigger !== reminder.nextTriggerAt || active !== reminder.active) {
+            hasChanges = true;
+            return {
+              ...reminder,
+              nextTriggerAt: nextTrigger,
+              nextDueAt: nextTrigger,
+              active,
+              updatedAt: now
+            };
+          }
+        }
+        return reminder;
+      });
+
+      if (hasChanges) {
+        if (uid === 'demo-uid') {
+          setReminders(updatedReminders);
+          saveStoredReminders(updatedReminders);
+        } else if (uid) {
+          for (const updatedReminder of updatedReminders) {
+            const original = reminders.find(r => r.id === updatedReminder.id);
+            if (original && (original.nextTriggerAt !== updatedReminder.nextTriggerAt || original.active !== updatedReminder.active)) {
+              try {
+                console.log(`[Auto-Advance Client] Avançando lembrete "${updatedReminder.title}" para ${new Date(updatedReminder.nextTriggerAt).toLocaleString()}`);
+                await saveReminder(activeFamilyId || uid, updatedReminder);
+              } catch (err) {
+                console.error('Erro ao auto-avançar lembrete no Firestore:', err);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    // Executa imediatamente
+    checkAndAdvance();
+
+    // E a cada 30 segundos
+    const intervalId = setInterval(checkAndAdvance, 30000);
+    return () => clearInterval(intervalId);
+  }, [reminders, uid, activeFamilyId, userRole]);
+
   // 3.5. Sincronizar notificações locais nativas quando a lista de lembretes mudar (ex: modificado/adicionado por outro membro da família)
+
   const prevReminderIdsRef = useRef<string[]>([]);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -1724,7 +1800,7 @@ function App() {
   } : undefined;
 
   const getActiveTab = (screen: ScreenName): TabName => {
-    if (['today', 'feedings', 'sleep', 'diapers', 'more'].includes(screen)) {
+    if (['today', 'medications', 'vaccines', 'growth', 'more'].includes(screen)) {
       return screen as TabName;
     }
     return 'more';
