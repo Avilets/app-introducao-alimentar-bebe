@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade - Baby Grow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF7A00;
+            --primary-light: #FFF5EC;
+            --text-dark: #1E293B;
+            --text-light: #64748B;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --border: #E2E8F0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 30px;
+        }
+
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background-color: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            border: 2px solid #FFE4CC;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .last-update {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 10px;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            color: var(--text-dark);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+            font-weight: 600;
+        }
+
+        p, ul {
+            margin-bottom: 20px;
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 5px;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        ul li::before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1.2rem;
+            position: absolute;
+            left: 0;
+            top: -2px;
+        }
+
+        .highlight-box {
+            background-color: var(--primary-light);
+            border: 1px solid #FFE4CC;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 30px 0;
+        }
+
+        .highlight-box p {
+            margin-bottom: 0;
+            color: #C25100;
+            font-weight: 500;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: #C25100;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+            .container {
+                padding: 24px;
+                border-radius: 16px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-placeholder">👶</div>
+            <h1>Política de Privacidade</h1>
+            <p class="subtitle">Aplicativo Baby Grow</p>
+            <p class="last-update">Última atualização: 23 de Junho de 2026</p>
+        </header>
+
+        <p>A sua privacidade e a segurança dos dados do seu bebê são de extrema importância para nós. Esta Política de Privacidade descreve como o aplicativo <strong>Baby Grow</strong> coleta, usa, armazena e protege as suas informações e as do bebê cadastrado.</p>
+
+        <h2>1. Informações que Coletamos</h2>
+        <p>Para fornecer as funcionalidades do aplicativo, coletamos os seguintes dados inseridos voluntariamente por você:</p>
+        <ul>
+            <li><strong>Dados de Cadastro do Usuário:</strong> Nome e endereço de e-mail (usados para criar e autenticar sua conta através do Firebase Authentication).</li>
+            <li><strong>Dados do Bebê:</strong> Nome, data de nascimento, gênero e foto de perfil (armazenada de forma leve localmente e no banco de dados para personalização e cálculo da idade em meses).</li>
+            <li><strong>Registros de Rotina:</strong> Informações diárias de alimentação (mamadas, introdução de frutas e reações alimentares), sono, trocas de fraldas, peso, altura, histórico de vacinas aplicadas, lembretes agendados e medicamentos ministrados.</li>
+            <li><strong>Notas Médicas:</strong> Anotações livres sobre orientações de pediatras.</li>
+            <li><strong>Dados de Conexão Familiar:</strong> Endereços de e-mail dos membros convidados para compartilhar a conta da família.</li>
+        </ul>
+
+        <h2>2. Como Usamos as Informações</h2>
+        <p>As informações coletadas são utilizadas estritamente para:</p>
+        <ul>
+            <li>Permitir que você e os membros convidados da sua família visualizem e gerenciem a rotina do bebê de forma sincronizada em tempo real.</li>
+            <li>Calcular a idade do bebê para exibição e acompanhamento de marcos de desenvolvimento.</li>
+            <li>Exibir lembretes e notificações configurados no próprio dispositivo.</li>
+            <li>Autenticar o seu acesso e garantir a segurança das informações.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Nenhum Dado Vendido:</strong> O Baby Grow não vende, não aluga, não compartilha para fins publicitários e não divulga os dados do seu bebê para nenhuma empresa de terceiros, parceiros de marketing ou redes de anúncios.</p>
+        </div>
+
+        <h2>3. Compartilhamento de Dados</h2>
+        <p>Os dados coletados são compartilhados <strong>exclusivamente</strong> com os membros da família que você convidar explicitamente por e-mail dentro do aplicativo (como cônjuge, avós ou babá).</p>
+
+        <h2>4. Armazenamento e Segurança</h2>
+        <p>Os dados são armazenados de forma segura utilizando serviços de infraestrutura em nuvem fornecidos pelo <strong>Google Firebase</strong>. Adotamos medidas técnicas e administrativas adequadas para proteger as informações contra acessos não autorizados, perda ou alteração.</p>
+
+        <h2>5. Seus Direitos (Portabilidade e Exclusão)</h2>
+        <p>Em conformidade com a Lei Geral de Proteção de Dados (LGPD) e as diretrizes das lojas de aplicativos:</p>
+        <ul>
+            <li><strong>Portabilidade (Exportar):</strong> Você pode exportar todos os dados cadastrados no aplicativo a qualquer momento na tela de Configurações do app.</li>
+            <li><strong>Exclusão de Conta e Dados:</strong> Você pode excluir permanentemente sua conta de usuário e todos os registros associados ao seu perfil e ao bebê a qualquer momento, diretamente nas Configurações do aplicativo. Se preferir solicitar por fora, disponibilizamos um <a href="https://docs.google.com/forms/d/e/1FAIpQLSf1ArsdDJ8S7Ft6dIKyN2dum8qQbML27m7Feflba1QnSqgqag/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">Formulário de Exclusão de Conta</a> na web. A exclusão é imediata e irreversível em nosso banco de dados.</li>
+        </ul>
+
+        <h2>6. Alterações nesta Política</h2>
+        <p>Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas publicando a nova política nesta página ou por meio de um aviso no aplicativo.</p>
+
+        <h2>7. Contato</h2>
+        <p>Se tiver dúvidas sobre esta Política de Privacidade ou sobre o tratamento dos dados, entre em contato conosco através do e-mail:</p>
+        <p>✉️ <strong><a href="mailto:matheusmeneghite@gmail.com">matheusmeneghite@gmail.com</a></strong></p>
+
+        <footer>
+            <p>&copy; 2026 Baby Grow. Todos os direitos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>
