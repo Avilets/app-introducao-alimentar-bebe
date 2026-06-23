@@ -150,7 +150,6 @@ export const scheduleReminderNotification = async (reminder: Reminder): Promise<
           body,
           schedule: scheduleOptions,
           channelId: 'baby-reminders',
-          smallIcon: 'ic_stat_name', // Nome padrão do ícone configurado pelo Capacitor
           actionTypeId: 'OPEN_APP'
         }
       ]
